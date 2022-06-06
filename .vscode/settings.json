@@ -1,0 +1,22 @@
+{
+    "cSpell.words": [
+        "bitcoind",
+        "blkio",
+        "composegenerator",
+        "cpus",
+        "cpuset",
+        "domainname",
+        "HASHBLOCK",
+        "healthcheck",
+        "Ipam",
+        "memswap",
+        "pids",
+        "RAWBLOCK",
+        "RAWTX",
+        "rsplit",
+        "schemars",
+        "SHAREDSECRET",
+        "sysctls",
+        "Umbrel"
+    ]
+}
