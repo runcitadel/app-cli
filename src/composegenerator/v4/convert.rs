@@ -25,7 +25,7 @@ fn configure_ports(
             );
         }
         if port_map.get(service_name).is_none() {
-            return Err("Container not found or invalid in port map".to_string());
+            return Err(format!("Container {} not found or invalid in port map", service_name).to_string());
         }
         let ports = port_map.get(service_name).unwrap();
         for element in ports {
