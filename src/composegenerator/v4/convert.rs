@@ -30,7 +30,7 @@ fn configure_ports(
                 service_name
             )
             .to_string());
-        } else {
+        } else if original_definition.port.is_some() {
             let ports = port_map.get(service_name).unwrap();
             for element in ports {
                 if original_definition.port.is_some()
