@@ -24,19 +24,24 @@ fn configure_ports(
                 "port: is not supported for containers other than the main container".to_string(),
             );
         }
-        if port_map.get(service_name).is_none() {
-            return Err(format!("Container {} not found or invalid in port map", service_name).to_string());
-        }
-        let ports = port_map.get(service_name).unwrap();
-        for element in ports {
-            if original_definition.port.is_some()
-                && element.internal_port == original_definition.port.unwrap()
-            {
-                service.ports.push(format!(
-                    "{}:{}",
-                    element.outside_port, element.internal_port
-                ));
-                break;
+        if port_map.get(service_name).is_none() && original_definition.port.is_some() {
+            return Err(format!(
+                "Container {} not found or invalid in port map",
+                service_name
+            )
+            .to_string());
+        } else {
+            let ports = port_map.get(service_name).unwrap();
+            for element in ports {
+                if original_definition.port.is_some()
+                    && element.internal_port == original_definition.port.unwrap()
+                {
+                    service.ports.push(format!(
+                        "{}:{}",
+                        element.outside_port, element.internal_port
+                    ));
+                    break;
+                }
             }
         }
 
@@ -210,7 +215,10 @@ fn get_hidden_services(
             match hidden_services {
                 types::HiddenServices::PortMap(simple_map) => {
                     if service_name != main_container {
-                        let hidden_service_string = format!("HiddenServiceDir /var/lib/tor/app-{}-{}\n", app_name_slug, service_name_slug);
+                        let hidden_service_string = format!(
+                            "HiddenServiceDir /var/lib/tor/app-{}-{}\n",
+                            app_name_slug, service_name_slug
+                        );
                         result += &hidden_service_string.as_str();
                     }
                     for port in simple_map {
