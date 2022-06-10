@@ -150,7 +150,7 @@ fn convert_volumes(
                     };
                     service
                         .volumes
-                        .push(format!("${{APP_DATA}}{}:{}", mount_host_dir, mount.1));
+                        .push(format!("${{APP_DATA_DIR}}{}:{}", mount_host_dir, mount.1));
                 }
             }
 
