@@ -2,7 +2,9 @@ use serde_json::{json, Map, Value};
 
 use crate::composegenerator::compose::types::{ComposeSpecification, Service};
 use crate::composegenerator::permissions;
-use crate::composegenerator::utils::{get_main_container, validate_cmd, validate_port_map_app};
+use crate::composegenerator::utils::{
+    get_host_port, get_main_container, validate_cmd, validate_port_map_app,
+};
 use crate::composegenerator::v4::types;
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
@@ -24,25 +26,32 @@ fn configure_ports(
                 "port: is not supported for containers other than the main container".to_string(),
             );
         }
-        if port_map.get(service_name).is_none() && original_definition.port.is_some() {
-            return Err(format!(
-                "Container {} not found or invalid in port map",
-                service_name
-            )
-            .to_string());
-        } else if original_definition.port.is_some() {
-            let ports = port_map.get(service_name).unwrap();
-            for element in ports {
-                if original_definition.port.is_some()
-                    && element.internal_port == original_definition.port.unwrap()
-                {
-                    service.ports.push(format!(
-                        "{}:{}",
-                        element.outside_port, element.internal_port
-                    ));
-                    break;
-                }
+
+        if let Some(internal_port) = original_definition.port {
+            if service_name != main_container {
+                return Err(
+                    "port: is not supported for containers other than the main container"
+                        .to_string(),
+                );
             }
+            if port_map.get(service_name).is_none() {
+                return Err(format!(
+                    "Container {} not found or invalid in port map",
+                    service_name
+                ));
+            }
+            let ports = port_map.get(service_name).unwrap();
+            let outside_port = get_host_port(ports, internal_port);
+            if let Some(port_map_elem) = outside_port {
+                service
+                    .ports
+                    .push(format!("{}:{}", port_map_elem.outside_port, internal_port));
+                break;
+            } else {
+                return Err("Main container port not found in port map".to_string());
+            }
+        } else if service_name == main_container {
+            return Err("A port is required for the main container".to_string());
         }
 
         if let Some(required_ports) = &original_definition.required_ports {
@@ -209,7 +218,7 @@ fn get_hidden_services(
         let service_name_slug = service_name.to_lowercase().replace('_', "-");
         if service_name == main_container {
             let hidden_service_string = format!("HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:<{}-main-port>\n", app_name_slug, app_name_slug, service_name_slug, service_name_slug);
-            result += &hidden_service_string.as_str();
+            result += hidden_service_string.as_str();
         }
         if let Some(hidden_services) = &original_definition.hidden_services {
             match hidden_services {
@@ -219,14 +228,14 @@ fn get_hidden_services(
                             "HiddenServiceDir /var/lib/tor/app-{}-{}\n",
                             app_name_slug, service_name_slug
                         );
-                        result += &hidden_service_string.as_str();
+                        result += hidden_service_string.as_str();
                     }
                     for port in simple_map {
                         let port_string = format!(
                             "HiddenServicePort {} <app-{}-{}-ip>:{}\n",
                             port.0, app_name_slug, service_name_slug, port.1
                         );
-                        result += &port_string.as_str();
+                        result += port_string.as_str();
                     }
                 }
                 types::HiddenServices::LayeredMap(layered_map) => {
@@ -236,13 +245,13 @@ fn get_hidden_services(
                             app_name_slug,
                             element.0.to_lowercase().replace('_', "-")
                         );
-                        result += &hidden_service_string.as_str();
+                        result += hidden_service_string.as_str();
                         for port in element.1 {
                             let port_string = format!(
                                 "HiddenServicePort {} <app-{}-{}-ip>:{}\n",
                                 port.0, app_name_slug, service_name_slug, port.1
                             );
-                            result += &port_string.as_str();
+                            result += port_string.as_str();
                         }
                     }
                 }
@@ -314,11 +323,13 @@ pub fn convert_config(
     }
 
     // We can now finalize the process by parsing some of the remaining values
-    let main_service_name = get_main_container(&spec);
+    let main_service = get_main_container(&spec);
 
-    if main_service_name.is_err() {
-        return Err(main_service_name.err().unwrap());
+    if main_service.is_err() {
+        return Err(main_service.err().unwrap());
     }
+
+    let main_service_name = main_service.as_ref().unwrap().as_str();
 
     let converted_port_map = validate_port_map_app(port_map);
     if converted_port_map.is_err() {
@@ -327,21 +338,17 @@ pub fn convert_config(
 
     let convert_result = configure_ports(
         &app.services,
-        main_service_name.as_ref().unwrap().as_str(),
+        main_service_name,
         &mut spec,
-        &converted_port_map.unwrap(),
+        converted_port_map.as_ref().unwrap(),
     );
 
     if convert_result.is_err() {
         return Err(convert_result.err().unwrap());
     }
 
-    let ip_address_result = define_ip_addresses(
-        app_name,
-        &app.services,
-        main_service_name.as_ref().unwrap().as_str(),
-        &mut spec,
-    );
+    let ip_address_result =
+        define_ip_addresses(app_name, &app.services, main_service_name, &mut spec);
 
     if ip_address_result.is_err() {
         return Err(ip_address_result.err().unwrap());
@@ -353,13 +360,25 @@ pub fn convert_config(
         return Err(volumes_result.err().unwrap());
     }
 
+    if app.services.get(main_service_name).unwrap().port.is_none() {
+        return Err("Main container does not declare port".to_string());
+    }
+
+    let main_port = app.services.get(main_service_name).unwrap().port.unwrap();
+
+    let main_port_host = get_host_port(
+        converted_port_map
+            .as_ref()
+            .unwrap()
+            .get(main_service_name)
+            .unwrap(),
+        main_port,
+    );
+
     let result = FinalResult {
         spec,
-        new_tor_entries: get_hidden_services(
-            app_name,
-            &app.services,
-            main_service_name.as_ref().unwrap().as_str(),
-        ),
+        new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
+        port: main_port_host.unwrap().outside_port,
     };
 
     // And we're done

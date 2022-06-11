@@ -136,6 +136,7 @@ pub struct PortMapElement {
 
 #[derive(Serialize, Deserialize)]
 pub struct FinalResult {
+    pub port: u16,
     pub new_tor_entries: String,
     pub spec: ComposeSpecification,
 }

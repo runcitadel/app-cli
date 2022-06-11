@@ -4,8 +4,8 @@ use serde_json::{Map, Value};
 
 use super::compose::types::ComposeSpecification;
 use super::permissions;
-use super::v4::types::PortMapElement;
 use super::v4::types::Command;
+use super::v4::types::PortMapElement;
 use crate::utils::find_env_vars;
 
 pub fn validate_cmd(
@@ -34,6 +34,15 @@ pub fn validate_cmd(
         }
     }
     Ok(())
+}
+
+pub fn get_host_port(
+    port_map: &[PortMapElement],
+    internal_port: u16,
+) -> Option<&PortMapElement> {
+    return port_map
+        .iter()
+        .find(|&elem| elem.internal_port == internal_port);
 }
 
 pub fn validate_port_map_app(
@@ -83,7 +92,7 @@ pub fn validate_port_map_app(
                 internal_port: elem.get("internalPort").unwrap().as_i64().unwrap() as u16,
                 outside_port: elem.get("publicPort").unwrap().as_i64().unwrap() as u16,
             };
-            
+
             container_result.push(entry);
         }
     }
