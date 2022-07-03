@@ -99,6 +99,7 @@ pub struct Container {
     pub network_mode: Option<String>,
     pub restart: Option<String>,
     pub init: Option<bool>,
+    pub extra_hosts: Option<Vec<String>>,
     // These need security checks
     pub entrypoint: Option<Command>,
     pub command: Option<Command>,

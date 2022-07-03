@@ -331,7 +331,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub external_links: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extra_hosts: Option<ListOrDict>,
+    pub extra_hosts: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub group_add: Option<Vec<serde_yaml::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]

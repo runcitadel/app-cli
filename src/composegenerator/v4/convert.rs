@@ -297,7 +297,7 @@ pub fn convert_config(
             }
         }
         let service = app.services[service_name].clone();
-        let base_result = Service {
+        let mut base_result = Service {
             image: Some(service.image.clone()),
             restart: service.restart.clone(),
             stop_grace_period: service.stop_grace_period.clone(),
@@ -310,6 +310,9 @@ pub fn convert_config(
             volumes: Vec::new(),
             ..Default::default()
         };
+        if let Some(extra_hosts) = service.extra_hosts.as_ref() {
+            base_result.extra_hosts = Some(extra_hosts.clone());
+        }
         spec_services.insert(service_name.to_string(), base_result);
         let validation_result = validate_service(
             app_name,
