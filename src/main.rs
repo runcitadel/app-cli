@@ -2,7 +2,8 @@ use app_cli::composegenerator::v4::convert::convert_config;
 use app_cli::composegenerator::v4::types::AppYml;
 use clap::Parser;
 use serde_yaml::Error;
-use std::process::exit;
+use std::{process::exit, io::Read};
+use tera::{Context, Tera};
 
 /// Manage apps on Citadel
 #[derive(Parser)]
@@ -55,7 +56,22 @@ fn main() {
                 log::error!("{}", app_yml.err().unwrap());
                 exit(1);
             }
-            let app_definition: Result<AppYml, Error> = serde_yaml::from_reader(app_yml.unwrap());
+            let mut context = Context::new();
+            context.insert("services", &service_list);
+            let mut tmpl = String::new() ;
+            let reading_result = app_yml.unwrap().read_to_string(&mut tmpl);
+            if reading_result.is_err() {
+                log::error!("Error running templating engine on app definition!");
+                log::error!("{}", reading_result.err().unwrap());
+                exit(1);
+            }
+            let result = Tera::one_off(tmpl.as_str(), &context, false);
+            if result.is_err() {
+                log::error!("Error running templating engine on app definition!");
+                log::error!("{}", result.err().unwrap());
+                exit(1);
+            }
+            let app_definition: Result<AppYml, Error> = serde_yaml::from_str(result.unwrap().as_str());
             if app_definition.is_err() {
                 log::error!("Error loading file!");
                 log::error!("{}", app_definition.err().unwrap());
@@ -83,13 +99,14 @@ fn main() {
                 log::error!("App not found in port map!");
                 exit(1);
             }
-            
+
             if !port_map
-            .as_ref()
-            .unwrap()
-            .get(args.app_name.as_ref().unwrap())
-            .unwrap()
-            .is_object() {
+                .as_ref()
+                .unwrap()
+                .get(args.app_name.as_ref().unwrap())
+                .unwrap()
+                .is_object()
+            {
                 log::error!("App definition in port map is invalid!");
                 exit(1);
             }
@@ -103,7 +120,6 @@ fn main() {
             let result = convert_config(
                 args.app_name.as_ref().unwrap(),
                 app_definition.unwrap(),
-                service_list,
                 current_app_map,
             );
             if result.is_err() {

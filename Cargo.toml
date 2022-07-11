@@ -16,6 +16,7 @@ lazy_static = "1.4"
 literal = "0.2"
 log = "0.4"
 env_logger = "0.9"
+tera = "1"
 
 [profile.release]
 strip = true

@@ -112,9 +112,6 @@ pub struct Container {
     pub mounts: Option<Mounts>,
     #[serde(default = "true_as_func")]
     pub enable_networking: bool,
-    /// Unlike depends_on, this is dependencies (defined in metadata) that are required for this container
-    /// The container gets ignored without them
-    pub requires: Option<Vec<String>>,
     pub hidden_services: Option<HiddenServices>,
 }
 

@@ -265,7 +265,6 @@ fn get_hidden_services(
 pub fn convert_config(
     app_name: &str,
     app: types::AppYml,
-    services: Vec<&str>,
     port_map: &Map<String, Value>,
 ) -> Result<FinalResult, String> {
     let mut spec: ComposeSpecification = ComposeSpecification {
@@ -281,21 +280,7 @@ pub fn convert_config(
     let spec_services = spec.services.get_or_insert(HashMap::new());
     let permissions = flatten(app.metadata.permissions.clone());
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
-    'service_loop: for service_name in app.services.keys() {
-        for dependency in app.services[service_name]
-            .requires
-            .as_ref()
-            .unwrap_or(&Vec::<String>::new())
-        {
-            if !services.contains(&dependency.as_str()) {
-                log::debug!(
-                    "Service {} depends on {}, which is not installed",
-                    service_name,
-                    dependency
-                );
-                continue 'service_loop;
-            }
-        }
+    for service_name in app.services.keys() {
         let service = app.services[service_name].clone();
         let mut base_result = Service {
             image: Some(service.image.clone()),
