@@ -58,6 +58,7 @@ fn main() {
             }
             let mut context = Context::new();
             context.insert("services", &service_list);
+            context.insert("app_name", args.app_name.as_ref().unwrap());
             let mut tmpl = String::new() ;
             let reading_result = app_yml.unwrap().read_to_string(&mut tmpl);
             if reading_result.is_err() {
@@ -118,7 +119,7 @@ fn main() {
                 .unwrap();
 
             let result = convert_config(
-                args.app_name.as_ref().unwrap(),
+                &args.app_name.unwrap(),
                 app_definition.unwrap(),
                 current_app_map,
             );
