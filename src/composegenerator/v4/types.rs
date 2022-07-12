@@ -49,6 +49,7 @@ pub struct Metadata {
     /// A list of promo images for the apps
     pub gallery: Option<Vec<String>>,
     /// The path the "Open" link on the dashboard should lead to
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     /// The app's default password. Can also be $APP_SEED for a random password
     pub default_password: Option<String>,
@@ -56,6 +57,7 @@ pub struct Metadata {
     /// True if the app only works over Tor
     pub tor_only: bool,
     /// A list of containers to update automatically (still validated by the Citadel team)
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub update_containers: Option<Vec<String>>,
 }
 
@@ -137,4 +139,5 @@ pub struct FinalResult {
     pub port: u16,
     pub new_tor_entries: String,
     pub spec: ComposeSpecification,
+    pub metadata: Metadata,
 }

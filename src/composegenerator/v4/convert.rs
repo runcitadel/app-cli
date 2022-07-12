@@ -367,6 +367,7 @@ pub fn convert_config(
         spec,
         new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
         port: main_port_host.unwrap().outside_port,
+        metadata: app.metadata,
     };
 
     // And we're done
