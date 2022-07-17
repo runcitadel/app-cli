@@ -1,3 +1,5 @@
+use log::debug;
+
 pub const BITCOIN_ENV_VARS: [&str; 10] = [
     "BITCOIN_IP",
     "BITCOIN_P2P_PORT",
@@ -37,8 +39,7 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         return permissions.contains(&"bitcoind".to_string())
             && BITCOIN_ENV_VARS.contains(&env_var);
     } else if env_var.starts_with("LND") {
-        return permissions.contains(&"lnd".to_string())
-            && LND_ENV_VARS.contains(&env_var);
+        return permissions.contains(&"lnd".to_string()) && LND_ENV_VARS.contains(&env_var);
     } else if env_var.starts_with("ELECTRUM") {
         return permissions.contains(&"electrum".to_string())
             && ELECTRUM_ENV_VARS.contains(&env_var);
@@ -51,9 +52,23 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         // Remove the APP_
         let mut app_name: &str = env_var.split_once('_').unwrap().1;
         // Remove the _IP / _PORT / _SHAREDSECRET
-        app_name = app_name.rsplit_once('_').unwrap().0;
+        match app_name.rsplit_once('_') {
+            Some(split) => {
+                app_name = split.0;
+            }
+            None => {
+                debug!("Env var not in normal format")
+            }
+        }
         // Remove the container name
-        app_name = app_name.rsplit_once('_').unwrap().0;
+        match app_name.rsplit_once('_') {
+            Some(split) => {
+                app_name = split.0;
+            }
+            None => {
+                debug!("Env var not in normal format")
+            }
+        }
         let lower_app_name: String = app_name.to_lowercase();
         let app_permission_name = lower_app_name.as_str().replace('_', "-");
         return app_id == app_permission_name || permissions.contains(&app_permission_name);
