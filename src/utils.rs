@@ -32,7 +32,7 @@ pub fn find_env_vars(string: &str) -> Vec<String> {
 }
 
 #[cfg(test)]
-mod test_env_vars {
+mod test {
     use crate::utils::find_env_vars;
 
     #[test]

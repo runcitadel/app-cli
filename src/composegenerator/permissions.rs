@@ -1,5 +1,3 @@
-use log::debug;
-
 pub const BITCOIN_ENV_VARS: [&str; 10] = [
     "BITCOIN_IP",
     "BITCOIN_P2P_PORT",
@@ -49,29 +47,56 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
     } else if env_var.starts_with("APP_HIDDEN_SERVICE_") || env_var.starts_with("APP_SEED") {
         return true;
     } else if env_var.starts_with("APP_") {
+        let mut split_result: Vec<&str> = env_var.split('_').collect();
         // Remove the APP_
-        let mut app_name: &str = env_var.split_once('_').unwrap().1;
+        split_result.remove(0);
         // Remove the _IP / _PORT / _SHAREDSECRET
-        match app_name.rsplit_once('_') {
-            Some(split) => {
-                app_name = split.0;
-            }
-            None => {
-                debug!("Env var not in normal format")
-            }
-        }
-        // Remove the container name
-        match app_name.rsplit_once('_') {
-            Some(split) => {
-                app_name = split.0;
-            }
-            None => {
-                debug!("Env var not in normal format")
-            }
-        }
-        let lower_app_name: String = app_name.to_lowercase();
-        let app_permission_name = lower_app_name.as_str().replace('_', "-");
+        split_result.pop();
+        let app_permission_name = split_result.join("-").to_lowercase();
         return app_id == app_permission_name || permissions.contains(&app_permission_name);
     }
     false
+}
+
+#[cfg(test)]
+mod test {
+    use crate::composegenerator::permissions::is_allowed_by_permissions;
+
+    #[test]
+    fn allow_access_to_own_vars() {
+        let result = is_allowed_by_permissions("example-app", "APP_EXAMPLE_APP_IP", &[]);
+        assert_eq!(result, true);
+        let result2 = is_allowed_by_permissions("example-app", "APP_SEED_5", &[]);
+        assert_eq!(result2, true);
+    }
+
+    #[test]
+    fn dont_crash_with_weird_vars() {
+        let result = is_allowed_by_permissions("example-app", "APP_EXAMPLEAPP", &[]);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn prevent_access_to_other_vars() {
+        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_IP", &[]);
+        assert_eq!(result, false);
+    }
+
+    #[test]
+    fn allow_access_to_apps_with_permission() {
+        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_IP", &["another-app".to_string()]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn allow_access_to_builtins_with_permission() {
+        let result = is_allowed_by_permissions("example-app", "BITCOIN_IP", &["bitcoind".to_string()]);
+        assert_eq!(result, true);
+    }
+
+    #[test]
+    fn always_allow_certain_values() {
+        let result = is_allowed_by_permissions("example-app", "BITCOIN_NETWORK", &[]);
+        assert_eq!(result, true);
+    }
 }
