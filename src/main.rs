@@ -1,7 +1,6 @@
-use app_cli::composegenerator::v4::convert::convert_config;
+use app_cli::composegenerator::convert_config;
 use app_cli::composegenerator::v4::types::AppYml;
 use clap::Parser;
-use serde_yaml::Error;
 use std::{process::exit, io::Read};
 use tera::{Context, Tera};
 
@@ -66,16 +65,10 @@ fn main() {
                 log::error!("{}", reading_result.err().unwrap());
                 exit(1);
             }
-            let result = Tera::one_off(tmpl.as_str(), &context, false);
-            if result.is_err() {
+            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false);
+            if tmpl_result.is_err() {
                 log::error!("Error running templating engine on app definition!");
-                log::error!("{}", result.err().unwrap());
-                exit(1);
-            }
-            let app_definition: Result<AppYml, Error> = serde_yaml::from_str(result.unwrap().as_str());
-            if app_definition.is_err() {
-                log::error!("Error loading file!");
-                log::error!("{}", app_definition.err().unwrap());
+                log::error!("{}", tmpl_result.err().unwrap());
                 exit(1);
             }
             let ports_json = std::fs::File::open(args.port_map.unwrap().as_str());
@@ -120,7 +113,7 @@ fn main() {
 
             let result = convert_config(
                 &args.app_name.unwrap(),
-                app_definition.unwrap(),
+                &tmpl_result.unwrap(),
                 current_app_map,
             );
             if result.is_err() {
