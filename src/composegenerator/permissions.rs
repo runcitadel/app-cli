@@ -52,6 +52,8 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         split_result.remove(0);
         // Remove the _IP / _PORT / _SHAREDSECRET
         split_result.pop();
+        // Remove the container name
+        split_result.pop();
         let app_permission_name = split_result.join("-").to_lowercase();
         return app_id == app_permission_name || permissions.contains(&app_permission_name);
     }
@@ -64,7 +66,7 @@ mod test {
 
     #[test]
     fn allow_access_to_own_vars() {
-        let result = is_allowed_by_permissions("example-app", "APP_EXAMPLE_APP_IP", &[]);
+        let result = is_allowed_by_permissions("example-app", "APP_EXAMPLE_APP_CONTAINER_IP", &[]);
         assert_eq!(result, true);
         let result2 = is_allowed_by_permissions("example-app", "APP_SEED_5", &[]);
         assert_eq!(result2, true);
@@ -78,13 +80,13 @@ mod test {
 
     #[test]
     fn prevent_access_to_other_vars() {
-        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_IP", &[]);
+        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_CONTAINER_IP", &[]);
         assert_eq!(result, false);
     }
 
     #[test]
     fn allow_access_to_apps_with_permission() {
-        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_IP", &["another-app".to_string()]);
+        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_CONTAINER_IP", &["another-app".to_string()]);
         assert_eq!(result, true);
     }
 
