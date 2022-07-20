@@ -59,6 +59,8 @@ pub struct Metadata {
     /// A list of containers to update automatically (still validated by the Citadel team)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub update_containers: Option<Vec<String>>,
+    /// A description of the app
+    pub description: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, PartialEq)]
@@ -79,9 +81,13 @@ pub enum PortPriority {
 
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, PartialEq)]
 pub struct Mounts {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub bitcoin: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub lnd: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub c_lightning: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<HashMap<String, String>>,
 }
 
@@ -94,26 +100,42 @@ fn true_as_func() -> bool {
 pub struct Container {
     // These can be copied directly without validation
     pub image: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_grace_period: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_signal: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub network_mode: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub restart: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub init: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_hosts: Option<Vec<String>>,
     // These need security checks
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<Command>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<Command>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<HashMap<String, String>>,
     // These are not directly present in a compose file and need to be converted
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,
     // This is currently handled on the host
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub port_priority: Option<PortPriority>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub required_ports: Option<PortsDefinition>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub mounts: Option<Mounts>,
     #[serde(default = "true_as_func")]
     pub enable_networking: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub hidden_services: Option<HiddenServices>,
 }
 

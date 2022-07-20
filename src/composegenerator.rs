@@ -2,6 +2,7 @@ pub mod v4;
 pub mod compose;
 pub mod permissions;
 pub mod utils;
+pub mod umbrel;
 
 use serde_json::{Map, Value};
 

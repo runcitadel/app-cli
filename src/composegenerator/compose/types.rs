@@ -302,8 +302,8 @@ pub struct Service {
     pub cpuset: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub credential_spec: Option<ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpec>,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    pub depends_on: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub depends_on: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deploy: Option<Deployment>,
     #[serde(skip_serializing_if = "Option::is_none")]

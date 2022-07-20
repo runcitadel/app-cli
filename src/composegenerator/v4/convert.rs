@@ -290,7 +290,7 @@ pub fn convert_config(
             user: service.user.clone(),
             init: service.init,
             network_mode: service.network_mode.clone(),
-            depends_on: service.depends_on.clone().unwrap_or_default(),
+            depends_on: service.depends_on.clone(),
             ports: Vec::new(),
             volumes: Vec::new(),
             ..Default::default()

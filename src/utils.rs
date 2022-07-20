@@ -8,6 +8,19 @@ lazy_static! {
     static ref SYNTAX2_REGEX: Regex = Regex::new(r"\$[A-z1-9]+").unwrap();
 }
 
+#[macro_export]
+macro_rules! map(
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut m = ::std::collections::HashMap::new();
+            $(
+                m.insert($key.to_string(), $value);
+            )+
+            m
+        }
+     };
+);
+
 pub fn find_env_vars(string: &str) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
     let found_things = SYNTAX1_REGEX.captures_iter(string);
