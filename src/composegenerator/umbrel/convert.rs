@@ -124,7 +124,7 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             port_priority: None,
             required_ports: None,
             mounts: mounts,
-            enable_networking: service_def.networks.is_some(),
+            enable_networking: if service_def.networks.is_some() { None } else { Some(false) },
             hidden_services: None,
         };
         result_services.insert(service_name, new_service);

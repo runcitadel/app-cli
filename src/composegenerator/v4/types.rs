@@ -91,11 +91,6 @@ pub struct Mounts {
     pub data: Option<HashMap<String, String>>,
 }
 
-fn true_as_func() -> bool {
-    true
-}
-
-
 #[derive(Serialize, Deserialize, Debug, JsonSchema, Clone, PartialEq)]
 pub struct Container {
     // These can be copied directly without validation
@@ -133,8 +128,8 @@ pub struct Container {
     pub required_ports: Option<PortsDefinition>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mounts: Option<Mounts>,
-    #[serde(default = "true_as_func")]
-    pub enable_networking: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enable_networking: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hidden_services: Option<HiddenServices>,
 }
