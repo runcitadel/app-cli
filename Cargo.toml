@@ -20,3 +20,5 @@ tera = { version = "1", default-features = false }
 [profile.release]
 strip = true
 lto = true
+opt-level = "z"
+panic = "abort"
