@@ -81,7 +81,7 @@ fn define_ip_addresses(
     for service_name in services.clone().keys() {
         let service: &mut Service = services.get_mut(service_name).unwrap();
 
-        if containers.get(service_name).unwrap().enable_networking.unwrap_or(false) {
+        if containers.get(service_name).unwrap().enable_networking.unwrap_or(true) {
             service.networks = Some(json!({
                 "default": {
                     "ipv4_address": format!("$APP_{}_{}_IP", app_name.to_string().to_uppercase().replace('-', "_"), service_name.to_uppercase().replace('-', "_"))
