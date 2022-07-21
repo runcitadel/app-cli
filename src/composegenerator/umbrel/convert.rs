@@ -6,16 +6,12 @@ use crate::map;
 
 pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
     let deps: Vec<Permissions> = metadata.dependencies.into_iter().map(| dep | -> Permissions {
-        if dep == "lightning" {
-            return Permissions::OneDependency("lnd".to_string());
+        match dep.as_str() {
+            "lightning" => Permissions::OneDependency("lnd".to_string()),
+            "bitcoin" => Permissions::OneDependency("bitcoind".to_string()),
+            "electrs"  => Permissions::OneDependency("electrum".to_string()),
+            _ => Permissions::OneDependency(dep),
         }
-        if dep == "bitcoin" {
-            return Permissions::OneDependency("bitcoind".to_string());
-        }
-        if dep == "electrs" {
-            return Permissions::OneDependency("electrum".to_string());
-        }
-        return Permissions::OneDependency(dep);
     }).collect();
     V4Metadata {
         name: metadata.name,
@@ -71,7 +67,7 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             let volume_path = split[1];
             if volume_name.starts_with("${APP_DATA_DIR}") {
                 let volume_name_without_prefix = volume_name.replace("${APP_DATA_DIR}", "");
-                let volume_name_without_prefix = volume_name_without_prefix.trim_start_matches("/");
+                let volume_name_without_prefix = volume_name_without_prefix.trim_start_matches('/');
                 mounts.as_mut().unwrap().data.as_mut().unwrap().insert(volume_name_without_prefix.to_string(), volume_path.to_string());
             } else if volume_name.starts_with("${APP_LIGHTNING_NODE_DATA_DIR}") {
                 mounts.as_mut().unwrap().lnd = Some(volume_path.to_string());
@@ -123,7 +119,7 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             port: if service_name == "main" || service_name == "web" { Some(metadata.port) } else { None },
             port_priority: None,
             required_ports: None,
-            mounts: mounts,
+            mounts,
             enable_networking: if service_def.networks.is_some() { None } else { Some(false) },
             hidden_services: None,
         };
