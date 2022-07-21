@@ -65,15 +65,15 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             }
             let volume_name = split[0];
             let volume_path = split[1];
-            if volume_name.starts_with("${APP_DATA_DIR}") {
-                let volume_name_without_prefix = volume_name.replace("${APP_DATA_DIR}", "");
+            if volume_name.contains("${APP_DATA_DIR}") || volume_name.contains("$APP_DATA_DIR") {
+                let volume_name_without_prefix = volume_name.replace("${APP_DATA_DIR}", "").replace("$APP_DATA_DIR", "");
                 let volume_name_without_prefix = volume_name_without_prefix.trim_start_matches('/');
                 mounts.as_mut().unwrap().data.as_mut().unwrap().insert(volume_name_without_prefix.to_string(), volume_path.to_string());
-            } else if volume_name.starts_with("${APP_LIGHTNING_NODE_DATA_DIR}") {
+            } else if volume_name.contains("APP_LIGHTNING_NODE_DATA_DIR") {
                 mounts.as_mut().unwrap().lnd = Some(volume_path.to_string());
-            } else if volume_name.starts_with("${APP_BITCOIN_DATA_DIR}") {
+            } else if volume_name.contains("APP_BITCOIN_DATA_DIR") {
                 mounts.as_mut().unwrap().bitcoin = Some(volume_path.to_string());
-            } else if volume_name.starts_with("${APP_CORE_LIGHTNING_REST_CERT_DIR}") {
+            } else if volume_name.contains("APP_CORE_LIGHTNING_REST_CERT_DIR") {
                 mounts.as_mut().unwrap().c_lightning = Some("Please set this yourself, I could not automatically check this.".to_string());
             }
         }
