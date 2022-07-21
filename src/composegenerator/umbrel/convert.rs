@@ -63,8 +63,8 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             // Convert mounts using env vars to real mounts
             // For example, if a volume is "${APP_DATA_DIR}/thing:/data",
             // we add set "/thing" of the mounts.data hashmap to "/data"
-            let split = volume.split(":").collect::<Vec<&str>>();
-            if split.len() != 2 {
+            let split = volume.split(':').collect::<Vec<&str>>();
+            if split.len() != 2 && split.len() != 3 {
                 continue
             }
             let volume_name = split[0];
