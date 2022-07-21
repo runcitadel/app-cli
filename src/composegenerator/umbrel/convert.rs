@@ -90,20 +90,20 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
         let mut env: Option<HashMap<String, String>> = Some(HashMap::new());
         for (key, value) in service_def.environment.unwrap() {
             let mut new_value = value.clone();
-            if value.contains("APP_BITCOIN_NETWORK") {
-                new_value = value.replace("APP_BITCOIN_NETWORK", "BITCOIN_NETWORK");
+            if new_value.contains("APP_BITCOIN_NETWORK") {
+                new_value = new_value.replace("APP_BITCOIN_NETWORK", "BITCOIN_NETWORK");
             }
-            if value.contains("APP_PASSWORD") {
-                new_value = value.replace("APP_PASSWORD", "APP_SEED");
+            if new_value.contains("APP_PASSWORD") {
+                new_value = new_value.replace("APP_PASSWORD", "APP_SEED");
             }
-            if value.contains("APP_LIGHTNING_NODE_GRPC_PORT") {
-                new_value = value.replace("APP_LIGHTNING_NODE_GRPC_PORT", "LND_GRPC_PORT");
+            if new_value.contains("APP_LIGHTNING_NODE_GRPC_PORT") {
+                new_value = new_value.replace("APP_LIGHTNING_NODE_GRPC_PORT", "LND_GRPC_PORT");
             }
-            if value.contains("APP_LIGHTNING_NODE_REST_PORT") {
-                new_value = value.replace("APP_LIGHTNING_NODE_REST_PORT", "LND_REST_PORT");
+            if new_value.contains("APP_LIGHTNING_NODE_REST_PORT") {
+                new_value = new_value.replace("APP_LIGHTNING_NODE_REST_PORT", "LND_REST_PORT");
             }
-            if value.contains("APP_LIGHTNING_NODE_IP") {
-                new_value = value.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
+            if new_value.contains("APP_LIGHTNING_NODE_IP") {
+                new_value = new_value.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
             }
             env.as_mut().unwrap().insert(key, new_value);
         }
