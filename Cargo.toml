@@ -8,19 +8,29 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "3.2", features = ["std", "derive"] }
+clap = { version = "3.2", features = ["std", "derive"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 serde_json = "1.0"
-schemars = "0.8"
+schemars = { version = "0.8", optional = true }
 regex = "1"
 lazy_static = "1.4"
 log = "0.4"
 env_logger = "0.9"
-tera = { version = "1", default-features = false }
+tera = { version = "1", default-features = false, optional = true }
 
 [profile.release]
 strip = true
 lto = true
 opt-level = "z"
 panic = "abort"
+
+
+[[bin]]
+name = "app-cli"
+required-features = ["cli"]
+
+[features]
+cli = ["preprocess", "schema", "dep:clap", "dep:tera"]
+schema = ["dep:schemars"]
+preprocess = ["dep:clap"]

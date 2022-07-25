@@ -1,17 +1,20 @@
 use serde::{Serialize, Deserialize};
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use std::collections::HashMap;
 
 use crate::composegenerator::compose::types::ComposeSpecification;
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum Command {
     SimpleCommand(String),
     ArrayCommand(Vec<String>),
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum Permissions {
     OneDependency(String),
@@ -19,14 +22,16 @@ pub enum Permissions {
 }
 
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum HiddenServices {
     PortMap(HashMap<u16, u16>),
     LayeredMap(HashMap<String, HashMap<u16, u16>>),
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
     /// The name of the app
@@ -63,13 +68,15 @@ pub struct Metadata {
     pub description: String,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct PortsDefinition {
     pub tcp: Option<HashMap<u16, u16>>,
     pub udp: Option<HashMap<u16, u16>>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum PortPriority {
     /// Outside port doesn't matter
     Optional,
@@ -79,7 +86,8 @@ pub enum PortPriority {
     Required,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Mounts {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bitcoin: Option<String>,
@@ -91,7 +99,8 @@ pub struct Mounts {
     pub data: Option<HashMap<String, String>>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Container {
     // These can be copied directly without validation
     pub image: String,
@@ -134,7 +143,8 @@ pub struct Container {
     pub hidden_services: Option<HiddenServices>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// Citadel app definition
 pub struct AppYml {
     pub citadel_version: u8,
