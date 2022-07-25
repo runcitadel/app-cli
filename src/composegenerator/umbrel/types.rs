@@ -1,6 +1,9 @@
 use serde::{Serialize, Deserialize};
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
     /// The version of the metadata file
