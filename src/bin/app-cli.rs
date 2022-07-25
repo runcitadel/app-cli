@@ -1,11 +1,15 @@
 use citadel_apps::composegenerator::convert_config;
+#[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
 use clap::Parser;
 use std::{
-    io::{Read, Write},
+    io::Read,
     process::exit,
 };
+#[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
+#[cfg(feature = "preprocess")]
+use std::io::Write;
 
 /// Manage apps on Citadel
 #[derive(Parser)]
@@ -114,10 +118,12 @@ fn main() {
                 exit(1);
             }
         }
+        #[cfg(feature = "dev-tools")]
         "schema" => {
             let schema = schemars::schema_for!(AppYml);
             println!("{}", serde_yaml::to_string(&schema).unwrap());
         }
+        #[cfg(feature = "preprocess")]
         "preprocess" => {
             if args.app.is_none() {
                 log::error!("No app provided!");
@@ -162,6 +168,7 @@ fn main() {
                 exit(1);
             }
         }
+        #[cfg(feature = "dev-tools")]
         "umbrel-to-citadel" => {
             if args.app.is_none() {
                 log::error!("No app dir provided!");

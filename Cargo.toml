@@ -33,6 +33,7 @@ name = "app-cli"
 required-features = ["cli"]
 
 [features]
-cli = ["preprocess", "schema", "dep:clap", "dep:tera", "dep:env_logger"]
+cli = ["dep:clap", "dep:env_logger"]
+dev-tools = ["schema"]
 schema = ["dep:schemars"]
-preprocess = ["dep:clap"]
+preprocess = ["dep:tera"]
