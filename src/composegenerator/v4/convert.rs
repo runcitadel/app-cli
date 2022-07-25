@@ -15,7 +15,7 @@ fn configure_ports(
     containers: &HashMap<String, types::Container>,
     main_container: &str,
     output: &mut ComposeSpecification,
-    port_map: &HashMap<String, Vec<PortMapElement>>,
+    port_map: &Option<HashMap<String, Vec<PortMapElement>>>,
 ) -> Result<(), String> {
     let services = output.services.as_mut().unwrap();
     for service_name in services.clone().keys() {
@@ -34,14 +34,24 @@ fn configure_ports(
                         .to_string(),
                 );
             }
-            if port_map.get(service_name).is_none() {
-                return Err(format!(
-                    "Container {} not found or invalid in port map",
-                    service_name
-                ));
+            let outside_port: Option<&PortMapElement>;
+            let fake_port = PortMapElement {
+                internal_port: internal_port.clone(),
+                outside_port: internal_port.clone(),
+                dynamic: false,
+            };
+            if let Some(real_port_map) = port_map {
+                if real_port_map.get(service_name).is_none() {
+                    return Err(format!(
+                        "Container {} not found or invalid in port map",
+                        service_name
+                    ));
+                }
+                let ports = real_port_map.get(service_name).unwrap();
+                outside_port = get_host_port(ports, internal_port);
+            } else {
+                outside_port = Some(&fake_port);
             }
-            let ports = port_map.get(service_name).unwrap();
-            let outside_port = get_host_port(ports, internal_port);
             if let Some(port_map_elem) = outside_port {
                 service
                     .ports
@@ -81,7 +91,12 @@ fn define_ip_addresses(
     for service_name in services.clone().keys() {
         let service: &mut Service = services.get_mut(service_name).unwrap();
 
-        if containers.get(service_name).unwrap().enable_networking.unwrap_or(true) {
+        if containers
+            .get(service_name)
+            .unwrap()
+            .enable_networking
+            .unwrap_or(true)
+        {
             service.networks = Some(json!({
                 "default": {
                     "ipv4_address": format!("$APP_{}_{}_IP", app_name.to_string().to_uppercase().replace('-', "_"), service_name.to_uppercase().replace('-', "_"))
@@ -265,7 +280,7 @@ fn get_hidden_services(
 pub fn convert_config(
     app_name: &str,
     app: types::AppYml,
-    port_map: &Map<String, Value>,
+    port_map: &Option<&Map<String, Value>>,
 ) -> Result<FinalResult, String> {
     let mut spec: ComposeSpecification = ComposeSpecification {
         // Version is deprecated in the latest compose and should no longer be used
@@ -318,17 +333,21 @@ pub fn convert_config(
     }
 
     let main_service_name = main_service.as_ref().unwrap().as_str();
-
-    let converted_port_map = validate_port_map_app(port_map);
-    if converted_port_map.is_err() {
-        return Err(converted_port_map.err().unwrap());
+    let mut converted_port_map: Option<HashMap<String, Vec<PortMapElement>>> = None;
+    if let Some(real_port_map) = port_map {
+        let conversion_result = validate_port_map_app(real_port_map);
+        if conversion_result.is_err() {
+            return Err(conversion_result.err().unwrap());
+        } else {
+            converted_port_map = Some(conversion_result.unwrap());
+        }
     }
 
     let convert_result = configure_ports(
         &app.services,
         main_service_name,
         &mut spec,
-        converted_port_map.as_ref().unwrap(),
+        &converted_port_map,
     );
 
     if convert_result.is_err() {
@@ -354,19 +373,19 @@ pub fn convert_config(
 
     let main_port = app.services.get(main_service_name).unwrap().port.unwrap();
 
-    let main_port_host = get_host_port(
-        converted_port_map
-            .as_ref()
-            .unwrap()
-            .get(main_service_name)
-            .unwrap(),
-        main_port,
-    );
+    let mut main_port_host: Option<u16> = None;
+    if let Some(converted_map) = converted_port_map {
+        main_port_host = Some(
+            get_host_port(converted_map.get(main_service_name).unwrap(), main_port)
+                .unwrap()
+                .outside_port,
+        );
+    }
 
     let result = FinalResult {
         spec,
         new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
-        port: main_port_host.unwrap().outside_port,
+        port: main_port_host.unwrap_or(main_port),
         metadata: app.metadata,
     };
 

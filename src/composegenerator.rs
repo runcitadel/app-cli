@@ -11,7 +11,7 @@ use crate::composegenerator::v4::types::{AppYml, FinalResult};
 pub fn convert_config(
     app_name: &str,
     app: &str,
-    port_map: &Map<String, Value>,
+    port_map: &Option<&Map<String, Value>>,
 ) -> Result<FinalResult, String> {
     let parsed = serde_yaml::from_str::<serde_yaml::Value>(app);
     if parsed.is_err() {

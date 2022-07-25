@@ -106,7 +106,7 @@ fn main() {
                 log::error!("Error during reading: {}", error);
                 exit(1);
             }
-            let result = convert_config(&args.app_name.unwrap(), &app_definition, current_app_map);
+            let result = convert_config(&args.app_name.unwrap(), &app_definition, &Some(current_app_map));
             if let Err(error) = result {
                 log::error!("Error during reading: {}", error);
                 exit(1);
@@ -220,6 +220,36 @@ fn main() {
                 log::error!("Error saving file!");
                 exit(1);
             }
+        }
+        #[cfg(feature = "dev-tools")]
+        "validate" => {
+
+            if args.app.is_none() {
+                log::error!("No app provided!");
+                exit(1);
+            }
+            if args.app_name.is_none() {
+                log::error!("No app name provided!");
+                exit(1);
+            }
+            let app_yml = std::fs::File::open(args.app.unwrap().as_str());
+            if app_yml.is_err() {
+                log::error!("Error opening app definition!");
+                log::error!("{}", app_yml.err().unwrap());
+                exit(1);
+            }
+            let mut app_definition = String::new();
+            let reading_result = app_yml.unwrap().read_to_string(&mut app_definition);
+            if let Err(error) = reading_result {
+                log::error!("Error during reading: {}", error);
+                exit(1);
+            }
+            let result = convert_config(&args.app_name.unwrap(), &app_definition, &None);
+            if let Err(error) = result {
+                log::error!("Error during converting: {}", error);
+                exit(1);
+            }
+            log::info!("App is valid!");
         }
         _ => {
             log::error!("Command not supported");

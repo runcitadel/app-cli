@@ -152,7 +152,7 @@ pub struct AppYml {
     pub services: HashMap<String, Container>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PortMapElement {
     /// True if the port is defined by an env var and can be anything
