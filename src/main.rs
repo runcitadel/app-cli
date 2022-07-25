@@ -1,5 +1,5 @@
-use app_cli::composegenerator::convert_config;
-use app_cli::composegenerator::v4::types::AppYml;
+use citadel_apps::composegenerator::convert_config;
+use citadel_apps::composegenerator::v4::types::AppYml;
 use clap::Parser;
 use std::{
     io::{Read, Write},
@@ -193,20 +193,20 @@ fn main() {
                 log::error!("{}", app_yml.err().unwrap());
                 exit(1);
             }
-            let app_yml_parsed: Result<app_cli::composegenerator::umbrel::types::Metadata, serde_yaml::Error> = serde_yaml::from_reader(app_yml.unwrap());
+            let app_yml_parsed: Result<citadel_apps::composegenerator::umbrel::types::Metadata, serde_yaml::Error> = serde_yaml::from_reader(app_yml.unwrap());
             if app_yml_parsed.is_err() {
                 log::error!("Error parsing umbrel-app.yml!");
                 log::error!("{}", app_yml_parsed.err().unwrap());
                 exit(1);
             }
-            let compose_yml_parsed: Result<app_cli::composegenerator::compose::types::ComposeSpecification, serde_yaml::Error> =
+            let compose_yml_parsed: Result<citadel_apps::composegenerator::compose::types::ComposeSpecification, serde_yaml::Error> =
                 serde_yaml::from_reader(compose_yml.unwrap());
             if compose_yml_parsed.is_err() {
                 log::error!("Error parsing docker-compose.yml!");
                 log::error!("{}", compose_yml_parsed.err().unwrap());
                 exit(1);
             }
-            let result = app_cli::composegenerator::umbrel::convert::convert_compose(compose_yml_parsed.unwrap(), app_yml_parsed.unwrap());
+            let result = citadel_apps::composegenerator::umbrel::convert::convert_compose(compose_yml_parsed.unwrap(), app_yml_parsed.unwrap());
             let writer = std::fs::File::create(args.output.unwrap().as_str()).unwrap();
             let serialization_result = serde_yaml::to_writer(writer, &result);
             if serialization_result.is_err() {

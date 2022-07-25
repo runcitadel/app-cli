@@ -12,22 +12,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "app-cli"
-version = "0.1.0"
-dependencies = [
- "clap",
- "env_logger",
- "lazy_static",
- "log",
- "regex",
- "schemars",
- "serde",
- "serde_json",
- "serde_yaml",
- "tera",
-]
-
-[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -97,6 +81,22 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
+
+[[package]]
+name = "citadel-apps"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "env_logger",
+ "lazy_static",
+ "log",
+ "regex",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tera",
+]
 
 [[package]]
 name = "clap"
