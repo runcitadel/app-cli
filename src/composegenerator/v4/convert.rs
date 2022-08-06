@@ -36,8 +36,8 @@ fn configure_ports(
             }
             let outside_port: Option<&PortMapElement>;
             let fake_port = PortMapElement {
-                internal_port: internal_port.clone(),
-                outside_port: internal_port.clone(),
+                internal_port,
+                outside_port: internal_port,
                 dynamic: false,
             };
             if let Some(real_port_map) = port_map {
@@ -140,7 +140,7 @@ fn validate_service(
             let val = value.1;
             let env_vars = find_env_vars(val);
             for env_var in env_vars {
-                if !permissions::is_allowed_by_permissions(app_name, &env_var, permissions) {
+                if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
                     return Err(format!("Env var {} not allowed by permissions", env_var));
                 }
             }
@@ -336,10 +336,13 @@ pub fn convert_config(
     let mut converted_port_map: Option<HashMap<String, Vec<PortMapElement>>> = None;
     if let Some(real_port_map) = port_map {
         let conversion_result = validate_port_map_app(real_port_map);
-        if conversion_result.is_err() {
-            return Err(conversion_result.err().unwrap());
-        } else {
-            converted_port_map = Some(conversion_result.unwrap());
+        match conversion_result {
+            Err(conversion_error) => {
+                return Err(conversion_error);
+            }
+            Ok(conversion_result) => {
+                converted_port_map = Some(conversion_result);
+            }
         }
     }
 

@@ -2,6 +2,7 @@ pub mod v4;
 pub mod compose;
 pub mod permissions;
 pub mod utils;
+#[cfg(feature = "dev-tools")]
 pub mod umbrel;
 
 use serde_json::{Map, Value};
@@ -27,14 +28,19 @@ pub fn convert_config(
     match app_yml.get("citadel_version").unwrap().as_u64().unwrap() {
         4 => {
             let app_definition: Result<AppYml, serde_yaml::Error> = serde_yaml::from_str(app);
-            if let Ok(app_def) = app_definition {
-                v4::convert::convert_config(
-                    app_name,
-                    app_def,
-                    port_map,
-                )
-            } else {
-                Err(format!("Error loading app.yml as v4: {}", app_definition.err().unwrap()))
+            match app_definition {
+                Ok(app_definition) => {
+                    v4::convert::convert_config(
+                        app_name,
+                        app_definition,
+                        port_map,
+                    )
+
+                }
+                Err(error) => {
+                    Err(format!("Error loading app.yml as v4: {}", error))
+                },
+                
             }
         }
         _ => {

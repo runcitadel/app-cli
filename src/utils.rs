@@ -4,8 +4,9 @@ use regex::Regex;
 use crate::composegenerator::v4::types::Permissions;
 
 lazy_static! {
-    static ref SYNTAX1_REGEX: Regex = Regex::new(r"\$\{.*?}").unwrap();
-    static ref SYNTAX2_REGEX: Regex = Regex::new(r"\$[A-z1-9]+").unwrap();
+    // This should have been the following regex originally: \$(\{.*?}|[A-z1-9]+)
+    // However, it lead to a double match of ${VAR} and {VAR} getting matched for some reason 
+    static ref ENV_VAR_REGEX: Regex = Regex::new(r"\$\{.*?}|\$[A-z1-9]+").unwrap();
 }
 
 #[macro_export]
@@ -21,24 +22,19 @@ macro_rules! map(
      };
 );
 
-pub fn find_env_vars(string: &str) -> Vec<String> {
-    let mut result: Vec<String> = Vec::new();
-    let found_things = SYNTAX1_REGEX.captures_iter(string);
-    let found_things2 = SYNTAX2_REGEX.captures_iter(string);
-    for captures in found_things {
+pub fn find_env_vars(string: &str) -> Vec<&str> {
+    let mut result: Vec<&str> = Vec::new();
+    let matches = ENV_VAR_REGEX.captures_iter(string);
+    for captures in matches {
         for element in captures.iter().flatten() {
             let matched = element.as_str();
-            // Remove the leading "${" and trailing "}"
-            let var_name = &matched[2..matched.len() - 1];
-            result.push(var_name.to_string());
-        }
-    }
-    for captures in found_things2 {
-        for element in captures.iter().flatten() {
-            let matched = element.as_str();
-            // Remove the $
-            let var_name = &matched[1..matched.len()];
-            result.push(var_name.to_string());
+            // If the env var starts with ${, remove it and the closing }
+            // Otherwise, just remove the $
+            if matched.starts_with("${") {
+                result.push(&matched[2..matched.len() - 1])
+            } else {
+                result.push(&matched[1..matched.len()]);
+            };
         }
     }
     result
@@ -50,30 +46,30 @@ mod test {
 
     #[test]
     fn handle_empty_properly() {
-        let result = find_env_vars(&"Example value 123$ test".to_string());
+        let result = find_env_vars("Example value 123$ test");
         assert_eq!(result, Vec::<String>::new());
     }
 
     #[test]
     fn find_syntax_1() {
-        let result = find_env_vars(&"something${BITCOIN_IP}something".to_string());
-        assert_eq!(result, vec!["BITCOIN_IP".to_string()]);
+        let result = find_env_vars("something${BITCOIN_IP}something");
+        assert_eq!(result, vec!["BITCOIN_IP"]);
     }
 
     #[test]
     fn find_syntax_2() {
-        let result = find_env_vars(&"something $BITCOIN_IP something".to_string());
-        assert_eq!(result, vec!["BITCOIN_IP".to_string()]);
+        let result = find_env_vars("something $BITCOIN_IP something");
+        assert_eq!(result, vec!["BITCOIN_IP"]);
     }
 
     #[test]
     fn find_syntax_combined() {
         let result =
-            find_env_vars(&"something $BITCOIN_IP something ${LND_IP} $ANOTHER_THING".to_string());
+            find_env_vars("something $BITCOIN_IP something ${LND_IP} $ANOTHER_THING");
         let expected = vec![
-            "BITCOIN_IP".to_string(),
-            "LND_IP".to_string(),
-            "ANOTHER_THING".to_string(),
+            "BITCOIN_IP",
+            "LND_IP",
+            "ANOTHER_THING",
         ];
 
         assert!(expected.iter().all(|item| result.contains(item)));

@@ -17,7 +17,7 @@ pub fn validate_cmd(
         Command::SimpleCommand(simple_command) => {
             let env_vars = find_env_vars(simple_command);
             for env_var in env_vars {
-                if !permissions::is_allowed_by_permissions(app_name, &env_var, permissions) {
+                if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
                     return Err(format!("Env var {} not allowed by permissions", env_var));
                 }
             }
@@ -26,7 +26,7 @@ pub fn validate_cmd(
             for value in values {
                 let env_vars = find_env_vars(value);
                 for env_var in env_vars {
-                    if !permissions::is_allowed_by_permissions(app_name, &env_var, permissions) {
+                    if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
                         return Err(format!("Env var {} not allowed by permissions", env_var));
                     }
                 }

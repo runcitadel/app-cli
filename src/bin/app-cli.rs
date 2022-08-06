@@ -1,84 +1,109 @@
 use citadel_apps::composegenerator::convert_config;
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
-use clap::Parser;
-use std::{
-    io::Read,
-    process::exit,
-};
-#[cfg(feature = "preprocess")]
-use tera::{Context, Tera};
+use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
 use std::io::Write;
+use std::{io::Read, process::exit};
+#[cfg(feature = "preprocess")]
+use tera::{Context, Tera};
+
+#[derive(Subcommand, Debug)]
+enum SubCommand {
+    /// Convert a citadel app.yml to a result.yml file
+    Convert {
+        /// The app file to run this on
+        app: String,
+        /// The app's ID
+        #[clap(short, long)]
+        app_name: String,
+        /// The output file to save the result to
+        output: String,
+        /// The port map file
+        #[clap(short, long)]
+        port_map: String,
+    },
+    /// Get a JSON schema for the app.yml format
+    #[cfg(feature = "dev-tools")]
+    Schema {
+        /// The version of the app.yml format to get the schema for
+        /// (defaults to 4)
+        #[clap(short, long, default_value = "4")]
+        version: u8,
+    },
+    /// Preprocess a citadel app.yml.jinja file by parsing the Tera (jinja-like) template and writing the result to a file
+    /// The YAML is not validated or parsed in any way.
+    #[cfg(feature = "preprocess")]
+    Preprocess {
+        /// The app file to run this on
+        app: String,
+        /// The app's ID
+        #[clap(short, long)]
+        app_name: String,
+        /// The output file to save the result to
+        output: String,
+        /// The services that are installed as a list of comma separated values
+        #[clap(short, long)]
+        services: Option<String>,
+    },
+    /// Convert an Umbrel app (by app directory path) to a Citadel app.yml file
+    /// Manual fixes may be required to make the app.yml work
+    #[cfg(feature = "dev-tools")]
+    UmbrelToCitadel {
+        /// The app directory to run this on
+        app: String,
+        /// The output file to save the result to
+        output: String,
+    },
+    /// Validate a Citadel app.yml file and check if it could be parsed & converted
+    #[cfg(feature = "dev-tools")]
+    Validate {
+        /// The app file to run this on
+        app: String,
+        /// The app's ID
+        #[clap(short, long)]
+        app_name: String,
+    },
+}
 
 /// Manage apps on Citadel
 #[derive(Parser)]
 struct Cli {
     /// The subcommand to run
-    command: String,
-    /// The app file to run this on
-    app: Option<String>,
-    /// The app's name
-    #[clap(short, long)]
-    app_name: Option<String>,
-    /// The output to run this on
-    output: Option<String>,
-    /// The port map file
-    #[clap(short, long)]
-    port_map: Option<String>,
-    #[clap(short, long)]
-    /// Enable verbose mode
-    verbose: bool,
-    #[clap(short, long)]
-    services: Option<String>,
+    #[clap(subcommand)]
+    command: SubCommand,
 }
 
 fn main() {
     env_logger::init();
     let args: Cli = Cli::parse();
-    match args.command.as_str() {
-        "convert" => {
-            if args.app.is_none() {
-                log::error!("No app provided!");
-                exit(1);
-            }
-            if args.output.is_none() {
-                log::error!("No output provided!");
-                exit(1);
-            }
-            if args.port_map.is_none() {
-                log::error!("No port map provided!");
-                exit(1);
-            }
-            if args.app_name.is_none() {
-                log::error!("No app name provided!");
-                exit(1);
-            }
-            let app_yml = std::fs::File::open(args.app.unwrap().as_str());
+    match args.command {
+        SubCommand::Convert {
+            app,
+            app_name,
+            output,
+            port_map,
+        } => {
+            let app_yml = std::fs::File::open(app.as_str());
             if app_yml.is_err() {
                 log::error!("Error opening app definition!");
                 log::error!("{}", app_yml.err().unwrap());
                 exit(1);
             }
-            let ports_json = std::fs::File::open(args.port_map.unwrap().as_str());
-            if ports_json.is_err() {
+            let port_map = std::fs::File::open(port_map.as_str());
+            if port_map.is_err() {
                 log::error!("Error opening port map!");
-                log::error!("{}", ports_json.err().unwrap());
+                log::error!("{}", port_map.err().unwrap());
                 exit(1);
             }
             let port_map: Result<serde_json::Map<String, serde_json::Value>, serde_json::Error> =
-                serde_json::from_reader(ports_json.unwrap());
+                serde_json::from_reader(port_map.unwrap());
             if port_map.is_err() {
                 log::error!("Error loading port map!");
                 log::error!("{}", port_map.err().unwrap());
                 exit(1);
             }
-            if port_map
-                .as_ref()
-                .unwrap()
-                .get(args.app_name.as_ref().unwrap())
-                .is_none()
-            {
+            if port_map.as_ref().unwrap().get(&app_name).is_none() {
                 log::error!("App not found in port map!");
                 exit(1);
             }
@@ -86,7 +111,7 @@ fn main() {
             if !port_map
                 .as_ref()
                 .unwrap()
-                .get(args.app_name.as_ref().unwrap())
+                .get(&app_name)
                 .unwrap()
                 .is_object()
             {
@@ -94,11 +119,7 @@ fn main() {
                 exit(1);
             }
             let main_map = port_map.unwrap();
-            let current_app_map = main_map
-                .get(args.app_name.as_ref().unwrap())
-                .unwrap()
-                .as_object()
-                .unwrap();
+            let current_app_map = main_map.get(&app_name).unwrap().as_object().unwrap();
 
             let mut app_definition = String::new();
             let reading_result = app_yml.unwrap().read_to_string(&mut app_definition);
@@ -106,12 +127,12 @@ fn main() {
                 log::error!("Error during reading: {}", error);
                 exit(1);
             }
-            let result = convert_config(&args.app_name.unwrap(), &app_definition, &Some(current_app_map));
+            let result = convert_config(&app_name, &app_definition, &Some(current_app_map));
             if let Err(error) = result {
                 log::error!("Error during reading: {}", error);
                 exit(1);
             }
-            let writer = std::fs::File::create(args.output.unwrap().as_str()).unwrap();
+            let writer = std::fs::File::create(output.as_str()).unwrap();
             let serialization_result = serde_yaml::to_writer(writer, &result.unwrap());
             if serialization_result.is_err() {
                 log::error!("Error saving file!");
@@ -119,27 +140,26 @@ fn main() {
             }
         }
         #[cfg(feature = "dev-tools")]
-        "schema" => {
-            let schema = schemars::schema_for!(AppYml);
-            println!("{}", serde_yaml::to_string(&schema).unwrap());
-        }
+        SubCommand::Schema { version } => match version {
+            4 => {
+                let schema = schemars::schema_for!(AppYml);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            _ => {
+                log::error!("Unsupported schema version!");
+                exit(1);
+            }
+        },
         #[cfg(feature = "preprocess")]
-        "preprocess" => {
-            if args.app.is_none() {
-                log::error!("No app provided!");
-                exit(1);
-            }
-            if args.output.is_none() {
-                log::error!("No output provided!");
-                exit(1);
-            }
-            if args.app_name.is_none() {
-                log::error!("No app name provided!");
-                exit(1);
-            }
-            let services = args.services.unwrap_or_default();
+        SubCommand::Preprocess {
+            app,
+            app_name,
+            output,
+            services,
+        } => {
+            let services = services.unwrap_or_default();
             let service_list: Vec<&str> = services.split(',').collect();
-            let app_yml = std::fs::File::open(args.app.unwrap().as_str());
+            let app_yml = std::fs::File::open(app.as_str());
             if app_yml.is_err() {
                 log::error!("Error opening app definition!");
                 log::error!("{}", app_yml.err().unwrap());
@@ -147,7 +167,7 @@ fn main() {
             }
             let mut context = Context::new();
             context.insert("services", &service_list);
-            context.insert("app_name", args.app_name.as_ref().unwrap());
+            context.insert("app_name", &app_name);
             let mut tmpl = String::new();
             let reading_result = app_yml.unwrap().read_to_string(&mut tmpl);
             if reading_result.is_err() {
@@ -161,7 +181,7 @@ fn main() {
                 log::error!("{}", tmpl_result.err().unwrap());
                 exit(1);
             }
-            let mut writer = std::fs::File::create(args.output.unwrap().as_str()).unwrap();
+            let mut writer = std::fs::File::create(output.as_str()).unwrap();
             let writing_result = writer.write(tmpl_result.unwrap().as_bytes());
             if writing_result.is_err() {
                 log::error!("Error saving file: {}!", writing_result.err().unwrap());
@@ -169,52 +189,48 @@ fn main() {
             }
         }
         #[cfg(feature = "dev-tools")]
-        "umbrel-to-citadel" => {
-            if args.app.is_none() {
-                log::error!("No app dir provided!");
-                exit(1);
-            }
-            if args.output.is_none() {
-                log::error!("No output provided!");
-                exit(1);
-            }
-            let app_dir = std::fs::read_dir(args.app.as_ref().unwrap().as_str());
+        SubCommand::UmbrelToCitadel { app, output } => {
+            let app_dir = std::fs::read_dir(&app);
             if app_dir.is_err() {
                 log::error!("Error opening app dir!");
                 log::error!("{}", app_dir.err().unwrap());
                 exit(1);
             }
-            let compose_yml = std::fs::File::open(
-                args.app.as_ref().unwrap().as_str().to_string() + "/docker-compose.yml",
-            );
+            let compose_yml = std::fs::File::open(app.clone() + "/docker-compose.yml");
             if compose_yml.is_err() {
                 log::error!("Error opening docker-compose.yml!");
                 log::error!("{}", compose_yml.err().unwrap());
                 exit(1);
             }
-            let app_yml = std::fs::File::open(
-                args.app.as_ref().unwrap().as_str().to_string() + "/umbrel-app.yml",
-            );
+            let app_yml = std::fs::File::open(app + "/umbrel-app.yml");
             if app_yml.is_err() {
                 log::error!("Error opening umbrel-app.yml!");
                 log::error!("{}", app_yml.err().unwrap());
                 exit(1);
             }
-            let app_yml_parsed: Result<citadel_apps::composegenerator::umbrel::types::Metadata, serde_yaml::Error> = serde_yaml::from_reader(app_yml.unwrap());
+            let app_yml_parsed: Result<
+                citadel_apps::composegenerator::umbrel::types::Metadata,
+                serde_yaml::Error,
+            > = serde_yaml::from_reader(app_yml.unwrap());
             if app_yml_parsed.is_err() {
                 log::error!("Error parsing umbrel-app.yml!");
                 log::error!("{}", app_yml_parsed.err().unwrap());
                 exit(1);
             }
-            let compose_yml_parsed: Result<citadel_apps::composegenerator::compose::types::ComposeSpecification, serde_yaml::Error> =
-                serde_yaml::from_reader(compose_yml.unwrap());
+            let compose_yml_parsed: Result<
+                citadel_apps::composegenerator::compose::types::ComposeSpecification,
+                serde_yaml::Error,
+            > = serde_yaml::from_reader(compose_yml.unwrap());
             if compose_yml_parsed.is_err() {
                 log::error!("Error parsing docker-compose.yml!");
                 log::error!("{}", compose_yml_parsed.err().unwrap());
                 exit(1);
             }
-            let result = citadel_apps::composegenerator::umbrel::convert::convert_compose(compose_yml_parsed.unwrap(), app_yml_parsed.unwrap());
-            let writer = std::fs::File::create(args.output.unwrap().as_str()).unwrap();
+            let result = citadel_apps::composegenerator::umbrel::convert::convert_compose(
+                compose_yml_parsed.unwrap(),
+                app_yml_parsed.unwrap(),
+            );
+            let writer = std::fs::File::create(output).unwrap();
             let serialization_result = serde_yaml::to_writer(writer, &result);
             if serialization_result.is_err() {
                 log::error!("Error saving file!");
@@ -222,17 +238,8 @@ fn main() {
             }
         }
         #[cfg(feature = "dev-tools")]
-        "validate" => {
-
-            if args.app.is_none() {
-                log::error!("No app provided!");
-                exit(1);
-            }
-            if args.app_name.is_none() {
-                log::error!("No app name provided!");
-                exit(1);
-            }
-            let app_yml = std::fs::File::open(args.app.unwrap().as_str());
+        SubCommand::Validate { app, app_name } => {
+            let app_yml = std::fs::File::open(app);
             if app_yml.is_err() {
                 log::error!("Error opening app definition!");
                 log::error!("{}", app_yml.err().unwrap());
@@ -244,16 +251,12 @@ fn main() {
                 log::error!("Error during reading: {}", error);
                 exit(1);
             }
-            let result = convert_config(&args.app_name.unwrap(), &app_definition, &None);
+            let result = convert_config(&app_name, &app_definition, &None);
             if let Err(error) = result {
                 log::error!("Error during converting: {}", error);
                 exit(1);
             }
             log::info!("App is valid!");
-        }
-        _ => {
-            log::error!("Command not supported");
-            std::process::exit(1);
         }
     }
 }
