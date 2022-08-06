@@ -85,15 +85,15 @@ fn main() {
             port_map,
         } => {
             let app_yml = std::fs::File::open(app.as_str());
-            if app_yml.is_err() {
+            if let Err(error) = app_yml {
                 log::error!("Error opening app definition!");
-                log::error!("{}", app_yml.err().unwrap());
+                log::error!("{}", error);
                 exit(1);
             }
             let port_map = std::fs::File::open(port_map.as_str());
-            if port_map.is_err() {
+            if let Err(error) = port_map {
                 log::error!("Error opening port map!");
-                log::error!("{}", port_map.err().unwrap());
+                log::error!("{}", error);
                 exit(1);
             }
             let port_map: Result<serde_json::Map<String, serde_json::Value>, serde_json::Error> =
