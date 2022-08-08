@@ -4,7 +4,7 @@ use citadel_apps::composegenerator::v4::types::AppYml;
 use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
 use std::io::Write;
-use std::{io::Read, process::exit};
+use std::{io::Read, process::exit, path::Path};
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
 
@@ -42,6 +42,16 @@ enum SubCommand {
         app_name: String,
         /// The output file to save the result to
         output: String,
+        /// The services that are installed as a list of comma separated values
+        #[clap(short, long)]
+        services: Option<String>,
+    },
+    /// Preprocess a directory by looping through its subdirectories and preprocessing each app.yml.jinja file
+    /// and saving the result to an app.yml file
+    #[cfg(feature = "preprocess")]
+    PreprocessDir {
+        /// The directory to run this on
+        dir: String,
         /// The services that are installed as a list of comma separated values
         #[clap(short, long)]
         services: Option<String>,
@@ -150,6 +160,45 @@ fn main() {
                 exit(1);
             }
         },
+        #[cfg(feature = "preprocess")]
+        SubCommand::PreprocessDir { dir, services } => {
+            // Loop through the subdirectories of the directory and convert the app.yml.jinja files to app.yml
+            // The app name is the name of the subdirectory
+            let services = services.unwrap_or_default();
+            let service_list: Vec<&str> = services.split(',').collect();
+            let dir_path = Path::new(dir.as_str());
+            if !dir_path.is_dir() {
+                log::error!("Directory not found!");
+                exit(1);
+            }
+            let dir_entries = dir_path.read_dir().unwrap();
+            for entry in dir_entries {
+                let entry = entry.unwrap();
+                if entry.file_type().unwrap().is_dir() {
+                    let file_name = entry.file_name();
+                    let app_name = file_name.to_str().unwrap();
+                    let app_file = entry.path().join("app.yml.jinja");
+                    if !app_file.is_file() {
+                        continue;
+                    }
+                    let app_definition = std::fs::read_to_string(app_file.as_path()).unwrap();
+                    let mut context = Context::new();
+                    context.insert("services", &service_list);
+                    context.insert("app_name", &app_name);
+                    let result = Tera::one_off(app_definition.as_str(), &context, false);
+                    if let Err(error) = result {
+                        log::error!("Error during preprocessing: {}", error);
+                        continue;
+                    }
+                    let writer = std::fs::File::create(entry.path().join("app.yml")).unwrap();
+                    let serialization_result = serde_yaml::to_writer(writer, &result.unwrap());
+                    if serialization_result.is_err() {
+                        log::error!("Error saving file!");
+                        continue;
+                    }
+                }
+            }
+        }
         #[cfg(feature = "preprocess")]
         SubCommand::Preprocess {
             app,
