@@ -21,7 +21,7 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v3
       
-      - name: Install latest nightly
+      - name: Install latest Rust
         uses: actions-rs/toolchain@v1
         with:
             toolchain: ${{ matrix.toolchain }}
@@ -39,12 +39,15 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v3
       
-      - name: Install latest nightly
+      - name: Install latest Rust
         uses: actions-rs/toolchain@v1
         with:
             toolchain: nightly
             override: true
             components: rustfmt, clippy
+
+      - name: Install llvm
+        run: apt update && apt install -y llvm 
 
       - name: Generate coverage data
         run: |
