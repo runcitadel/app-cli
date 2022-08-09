@@ -54,11 +54,11 @@ jobs:
           RUSTFLAGS="-C instrument-coverage" cargo build --bin app-cli --all-features
           target/debug/app-cli help
           llvm-profdata merge -sparse default.profraw -o app_cli.profdata
+          llvm-cov show target/debug/app-cli -instr-profile=dapp_cli.profdata > coverage.txt
 
       - uses: codecov/codecov-action@v3
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: app_cli.profdata
+          files: coverage.txt
 
   build-amd64:
     name: Build image (AMD64)
