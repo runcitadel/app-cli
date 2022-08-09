@@ -385,11 +385,13 @@ pub fn convert_config(
         );
     }
 
+    let mut metadata = app.metadata.clone();
+    metadata.id = Some(app_name.to_string());
     let result = FinalResult {
         spec,
         new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
         port: main_port_host.unwrap_or(main_port),
-        metadata: app.metadata,
+        metadata,
     };
 
     // And we're done

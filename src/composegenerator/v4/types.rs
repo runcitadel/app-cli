@@ -34,6 +34,9 @@ pub enum HiddenServices {
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
+    /// The app id, only set in output
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     /// The name of the app
     pub name: String,
     /// The version of the app

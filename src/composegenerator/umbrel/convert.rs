@@ -14,6 +14,7 @@ pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
         }
     }).collect();
     V4Metadata {
+        id: None,
         name: metadata.name,
         version: metadata.version,
         repo: map! {
