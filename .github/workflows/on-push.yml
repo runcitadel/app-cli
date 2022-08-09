@@ -31,6 +31,36 @@ jobs:
       - name: Run tests
         run: cargo test
 
+  coverage:
+    name: Run tests
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [nightly]
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
+      
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: rustfmt, clippy
+
+      - name: Generate coverage data
+        run: |
+          RUSTFLAGS="-C instrument-coverage" cargo build --bin app-cli --all-features
+          target/debug/app-cli help
+          llvm-profdata merge -sparse default.profraw -o app_cli.profdata
+
+      - uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: app_cli.profdata
+
   build-amd64:
     name: Build image (AMD64)
     runs-on: ubuntu-22.04
