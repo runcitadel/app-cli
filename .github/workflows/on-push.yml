@@ -47,7 +47,7 @@ jobs:
             components: rustfmt, clippy
 
       - name: Install llvm
-        run: apt update && apt install -y llvm 
+        run: sudo apt update && sudo apt install -y llvm 
 
       - name: Generate coverage data
         run: |
