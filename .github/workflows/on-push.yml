@@ -9,13 +9,35 @@ on:
       - main
 
 jobs:
-  build-amd64:
-    name: Build image (AMD64)
-    runs-on: ubuntu-20.04
+  test:
+    name: Run tests
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, beta, nightly]
 
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+      
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: ${{ matrix.toolchain }}
+            override: true
+            components: rustfmt, clippy
+
+      - name: Run tests
+        run: cargo test
+
+  build-amd64:
+    name: Build image (AMD64)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v3
 
       - name: Set env variables
         run: |
@@ -24,14 +46,14 @@ jobs:
           echo "IMAGE_NAME=${IMAGE_NAME//docker-/}" >> $GITHUB_ENV
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1 
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Docker buildx action
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
 
       - name: Run Docker buildx
         run: |
@@ -45,7 +67,7 @@ jobs:
 
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set env variables
         run: |
@@ -66,14 +88,16 @@ jobs:
 
   create-manifest:
     name: Create two-architecture manifest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs:
       - build-amd64
       - build-arm64
+      # Don't push broken builds
+      - test
 
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set env variables
         run: |
