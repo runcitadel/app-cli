@@ -5,7 +5,7 @@ use crate::composegenerator::v4::types::Permissions;
 
 lazy_static! {
     // This should have been the following regex originally: \$(\{.*?}|[A-z1-9]+)
-    // However, it lead to a double match of ${VAR} and {VAR} getting matched for some reason 
+    // However, it lead to a double match of ${VAR} and {VAR} getting matched for some reason
     static ref ENV_VAR_REGEX: Regex = Regex::new(r"\$\{.*?}|\$[A-z1-9]+").unwrap();
 }
 
@@ -41,7 +41,7 @@ pub fn find_env_vars(string: &str) -> Vec<&str> {
 }
 
 #[cfg(test)]
-mod test {
+mod test_env_vars {
     use crate::utils::find_env_vars;
 
     #[test]
@@ -64,13 +64,8 @@ mod test {
 
     #[test]
     fn find_syntax_combined() {
-        let result =
-            find_env_vars("something $BITCOIN_IP something ${LND_IP} $ANOTHER_THING");
-        let expected = vec![
-            "BITCOIN_IP",
-            "LND_IP",
-            "ANOTHER_THING",
-        ];
+        let result = find_env_vars("something $BITCOIN_IP something ${LND_IP} $ANOTHER_THING");
+        let expected = vec!["BITCOIN_IP", "LND_IP", "ANOTHER_THING"];
 
         assert!(expected.iter().all(|item| result.contains(item)));
     }
@@ -89,4 +84,37 @@ pub fn flatten(perms: Vec<Permissions>) -> Vec<String> {
         }
     }
     result
+}
+
+#[cfg(test)]
+mod test_flatten {
+    use crate::composegenerator::v4::types::Permissions;
+    use crate::utils::flatten;
+
+    #[test]
+    fn handle_empty_properly() {
+        let result = flatten(Vec::<Permissions>::new());
+        assert_eq!(result, Vec::<String>::new());
+    }
+
+    #[test]
+    fn handle_simple_properly() {
+        let result = flatten(vec![
+            Permissions::OneDependency("a".to_string()),
+            Permissions::OneDependency("b".to_string()),
+        ]);
+        assert_eq!(result, vec!["a".to_string(), "b".to_string()]);
+    }
+
+    #[test]
+    fn handle_alternating_properly() {
+        let result = flatten(vec![
+            Permissions::OneDependency("a".to_string()),
+            Permissions::AlternativeDependency(vec!["b".to_string(), "c".to_string()]),
+        ]);
+        assert_eq!(
+            result,
+            vec!["a".to_string(), "b".to_string(), "c".to_string()]
+        );
+    }
 }
