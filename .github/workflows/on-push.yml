@@ -32,12 +32,8 @@ jobs:
         run: cargo test
 
   coverage:
-    name: Run tests
+    name: Upload coverage
     runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        toolchain: [nightly]
 
     steps:
       - name: Checkout project
