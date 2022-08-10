@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::composegenerator::compose::types::ComposeSpecification;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum Command {
@@ -13,7 +13,7 @@ pub enum Command {
     ArrayCommand(Vec<String>),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum Permissions {
@@ -22,7 +22,7 @@ pub enum Permissions {
 }
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum HiddenServices {
@@ -30,7 +30,7 @@ pub enum HiddenServices {
     LayeredMap(HashMap<String, HashMap<u16, u16>>),
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename_all = "camelCase")]
 pub struct Metadata {
@@ -71,14 +71,14 @@ pub struct Metadata {
     pub description: String,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct PortsDefinition {
     pub tcp: Option<HashMap<u16, u16>>,
     pub udp: Option<HashMap<u16, u16>>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub enum PortPriority {
     /// Outside port doesn't matter
@@ -89,7 +89,7 @@ pub enum PortPriority {
     Required,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Mounts {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -102,7 +102,7 @@ pub struct Mounts {
     pub data: Option<HashMap<String, String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct Container {
     // These can be copied directly without validation
@@ -146,7 +146,7 @@ pub struct Container {
     pub hidden_services: Option<HiddenServices>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 /// Citadel app definition
 pub struct AppYml {
@@ -155,7 +155,7 @@ pub struct AppYml {
     pub services: HashMap<String, Container>,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct PortMapElement {
     /// True if the port is defined by an env var and can be anything
@@ -164,7 +164,7 @@ pub struct PortMapElement {
     pub outside_port: u16,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct FinalResult {
     pub port: u16,
     pub new_tor_entries: String,

@@ -37,3 +37,6 @@ cli = ["dep:clap", "dep:env_logger"]
 dev-tools = ["schema"]
 schema = ["dep:schemars"]
 preprocess = ["dep:tera"]
+
+[dev-dependencies]
+pretty_assertions = "1.2.1"

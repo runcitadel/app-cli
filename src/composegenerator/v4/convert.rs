@@ -397,3 +397,114 @@ pub fn convert_config(
     // And we're done
     Ok(result)
 }
+
+#[cfg(test)]
+mod test {
+    use crate::{
+        composegenerator::{
+            compose::types::{ComposeSpecification, Service},
+            v4::{
+                convert::convert_config,
+                types::AppYml,
+                types::Metadata,
+                types::Permissions,
+                types::{Container, FinalResult},
+            },
+        },
+        map,
+    };
+
+    use pretty_assertions::assert_eq;
+    use serde_json::json;
+
+    #[test]
+    fn test_simple_app() {
+        let example_app = AppYml {
+            citadel_version: 4,
+            metadata: Metadata {
+                // To test if this is being overwritten
+                id: Some("a-fake-id-that-should-be-ignored".to_string()),
+                name: "Example app".to_string(),
+                version: "1.0.0".to_string(),
+                category: "Example category".to_string(),
+                tagline: "The only example app for Citadel you will ever need".to_string(),
+                developers: map! {
+                    "Citadel team".to_string() => "runcitadel.space".to_string()
+                },
+                permissions: vec![Permissions::OneDependency("lnd".to_string())],
+                repo: map! {
+                    "Example repo".to_string() => "https://github.com/runcitadel/app-cli".to_string()
+                },
+                support: "https://t.me/citadeldevelopers".to_string(),
+                description: "This is an example app that provides multiple features that you need on your node. These features include:\n\n- Example\n- Example\n- Example".to_string(),
+                ..Default::default()
+            },
+            services: map! {
+                "main" => Container {
+                    image: "ghcr.io/runcitadel/example:main".to_string(),
+                    user: Some("1000:1000".to_string()),
+                    depends_on: Some(vec!["database".to_string()]),
+                    port: Some(3000),
+                    ..Default::default()
+                },
+                "database" => Container {
+                    image: "ghcr.io/runcitadel/example-db:main".to_string(),
+                    user: Some("1000:1000".to_string()),
+                    ..Default::default()
+                }
+            }
+        };
+        let result = convert_config("example-app", example_app, &None);
+        assert!(result.is_ok());
+        let expected_result = FinalResult {
+            port: 3000,
+            new_tor_entries: "HiddenServiceDir /var/lib/tor/app-example-app\nHiddenServicePort 80 <app-example-app-main-ip>:<main-main-port>\n".to_string(),
+            spec: ComposeSpecification {
+                services: Some(map! {
+                    "main" => Service {
+                        image: Some("ghcr.io/runcitadel/example:main".to_string()),
+                        user: Some("1000:1000".to_string()),
+                        depends_on: Some(vec!["database".to_string()]),
+                        ports: vec!["3000:3000".to_string()],
+                        networks: Some(json!({
+                            "default": Some(json!({
+                                "ipv4_address": "$APP_EXAMPLE_APP_MAIN_IP".to_string()
+                            }))
+                        })),
+                        ..Default::default()
+                    },
+                    "database" => Service {
+                        image: Some("ghcr.io/runcitadel/example-db:main".to_string()),
+                        user: Some("1000:1000".to_string()),
+                        networks: Some(json!({
+                            "default": Some(json!({
+                                "ipv4_address": "$APP_EXAMPLE_APP_DATABASE_IP".to_string()
+                            }))
+                        })),
+                        ..Default::default()
+                    }
+                }),
+                ..Default::default()
+
+            },
+            metadata: Metadata {
+                id: Some("example-app".to_string()),
+                name: "Example app".to_string(),
+                version: "1.0.0".to_string(),
+                category: "Example category".to_string(),
+                tagline: "The only example app for Citadel you will ever need".to_string(),
+                developers: map! {
+                    "Citadel team".to_string() => "runcitadel.space".to_string()
+                },
+                permissions: vec![Permissions::OneDependency("lnd".to_string())],
+                repo: map! {
+                    "Example repo".to_string() => "https://github.com/runcitadel/app-cli".to_string()
+                },
+                support: "https://t.me/citadeldevelopers".to_string(),
+                description: "This is an example app that provides multiple features that you need on your node. These features include:\n\n- Example\n- Example\n- Example".to_string(),
+                ..Default::default()
+            },
+        };
+        assert_eq!(expected_result, result.unwrap());
+    }
+}
