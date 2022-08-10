@@ -31,35 +31,6 @@ jobs:
       - name: Run tests
         run: cargo test
 
-  coverage:
-    name: Upload coverage
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout project
-        uses: actions/checkout@v3
-      
-      - name: Install latest Rust
-        uses: actions-rs/toolchain@v1
-        with:
-            toolchain: nightly
-            override: true
-            components: rustfmt, clippy
-
-      - name: Install llvm
-        run: sudo apt update && sudo apt install -y llvm 
-
-      - name: Generate coverage data
-        run: |
-          RUSTFLAGS="-C instrument-coverage" cargo build --bin app-cli --all-features
-          target/debug/app-cli help
-          llvm-profdata merge -sparse default.profraw -o app_cli.profdata
-          llvm-cov show target/debug/app-cli -instr-profile=app_cli.profdata > coverage.txt
-
-      - uses: codecov/codecov-action@v3
-        with:
-          files: coverage.txt
-
   build-amd64:
     name: Build image (AMD64)
     runs-on: ubuntu-22.04
