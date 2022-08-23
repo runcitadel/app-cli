@@ -69,6 +69,9 @@ pub struct Metadata {
     pub update_containers: Option<Vec<String>>,
     /// A description of the app
     pub description: String,
+    /// For "virtual" apps, the service the app implements
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub implements: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]

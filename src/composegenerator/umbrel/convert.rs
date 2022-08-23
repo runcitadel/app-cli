@@ -37,6 +37,7 @@ pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
         tor_only: metadata.tor_only,
         update_containers: None,
         description: metadata.description,
+        implements: None,
     }
 }
 
