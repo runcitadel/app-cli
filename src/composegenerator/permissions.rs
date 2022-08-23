@@ -67,38 +67,38 @@ mod test {
     #[test]
     fn allow_access_to_own_vars() {
         let result = is_allowed_by_permissions("example-app", "APP_EXAMPLE_APP_CONTAINER_IP", &[]);
-        assert_eq!(result, true);
+        assert!(result);
         let result2 = is_allowed_by_permissions("example-app", "APP_SEED_5", &[]);
-        assert_eq!(result2, true);
+        assert!(result2);
     }
 
     #[test]
     fn dont_crash_with_weird_vars() {
         let result = is_allowed_by_permissions("example-app", "APP_EXAMPLEAPP", &[]);
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
     fn prevent_access_to_other_vars() {
         let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_CONTAINER_IP", &[]);
-        assert_eq!(result, false);
+        assert!(!result);
     }
 
     #[test]
     fn allow_access_to_apps_with_permission() {
         let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_CONTAINER_IP", &["another-app".to_string()]);
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
     fn allow_access_to_builtins_with_permission() {
         let result = is_allowed_by_permissions("example-app", "BITCOIN_IP", &["bitcoind".to_string()]);
-        assert_eq!(result, true);
+        assert!(result);
     }
 
     #[test]
     fn always_allow_certain_values() {
         let result = is_allowed_by_permissions("example-app", "BITCOIN_NETWORK", &[]);
-        assert_eq!(result, true);
+        assert!(result);
     }
 }

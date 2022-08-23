@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::composegenerator::v4::types::Command;
 
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "blkio_limit")]
 pub struct BlkioLimit {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -11,7 +11,7 @@ pub struct BlkioLimit {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rate: Option<serde_yaml::Value>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "blkio_weight")]
 pub struct BlkioWeight {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -19,7 +19,7 @@ pub struct BlkioWeight {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub weight: Option<i64>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "config")]
 pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -34,12 +34,12 @@ pub struct Config {
     pub template_driver: Option<String>,
 }
 pub type Constraints = serde_yaml::Value;
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct DeploymentPlacementItemItemPreferences {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spread: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct DeploymentPlacement {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub constraints: Option<Vec<String>>,
@@ -48,7 +48,7 @@ pub struct DeploymentPlacement {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub preferences: Option<Vec<DeploymentPlacementItemItemPreferences>>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimits {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cpus: Option<serde_yaml::Value>,
@@ -75,7 +75,7 @@ pub struct DeploymentPlacementItemItemPreferencesResources {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reservations: Option<DeploymentPlacementItemItemPreferencesResourcesLimitsReservations>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
@@ -121,7 +121,7 @@ pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRest
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename = "deployment")]
 pub struct Deployment { # [serde (skip_serializing_if = "Option::is_none")] pub endpoint_mode : Option < String > , # [serde (skip_serializing_if = "Option::is_none")] pub labels : Option < ListOrDict > , # [serde (skip_serializing_if = "Option::is_none")] pub mode : Option < String > , # [serde (skip_serializing_if = "Option::is_none")] pub placement : Option < DeploymentPlacement > , # [serde (skip_serializing_if = "Option::is_none")] pub replicas : Option < i64 > , # [serde (skip_serializing_if = "Option::is_none")] pub resources : Option < DeploymentPlacementItemItemPreferencesResources > , # [serde (skip_serializing_if = "Option::is_none")] pub restart_policy : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicy > , # [serde (skip_serializing_if = "Option::is_none")] pub rollback_config : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfig > , # [serde (skip_serializing_if = "Option::is_none")] pub update_config : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfigUpdateConfig > }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct DevicesItemParallelism {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<ListOfStrings>,
@@ -166,9 +166,9 @@ pub struct Healthcheck {
 }
 pub type ListOfStrings = Vec<String>;
 pub type ListOrDict = serde_yaml::Value;
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct NetworkIpamItemConfigAuxAddresses {}
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct NetworkIpamItemConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aux_addresses: Option<NetworkIpamItemConfigAuxAddresses>,
@@ -179,9 +179,9 @@ pub struct NetworkIpamItemConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub subnet: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct NetworkIpamItemConfigAuxAddressesOptions {}
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct NetworkIpam {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<Vec<NetworkIpamItemConfig>>,
@@ -190,7 +190,7 @@ pub struct NetworkIpam {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub options: Option<NetworkIpamItemConfigAuxAddressesOptions>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "network")]
 pub struct Network {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -213,7 +213,7 @@ pub struct Network {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "secret")]
 pub struct Secret {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -231,7 +231,7 @@ pub struct Secret {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub template_driver: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ServiceBlkioConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device_read_bps: Option<Vec<BlkioLimit>>,
@@ -246,7 +246,7 @@ pub struct ServiceBlkioConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub weight_device: Option<Vec<BlkioWeight>>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<String>,
@@ -255,7 +255,7 @@ pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub registry: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpecItemItemItemItemItemItemLogging
 {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -429,7 +429,7 @@ pub struct Service {
 }
 pub type ServiceConfigOrSecret = Vec<serde_yaml::Value>;
 pub type StringOrList = serde_yaml::Value;
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "volume")]
 pub struct Volume {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -443,13 +443,13 @@ pub struct Volume {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ComposeSpecificationConfigs {}
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ComposeSpecificationConfigsSecrets {}
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ComposeSpecificationConfigsSecretsServices {}
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 pub struct ComposeSpecificationConfigsSecretsServicesVolumes {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename = "Compose Specification")]
