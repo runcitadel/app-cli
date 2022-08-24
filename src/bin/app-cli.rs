@@ -4,7 +4,7 @@ use citadel_apps::composegenerator::v4::types::AppYml;
 use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
 use std::io::Write;
-use std::{io::Read, process::exit, path::Path};
+use std::{io::Read, path::Path, process::exit};
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
 
@@ -56,6 +56,26 @@ enum SubCommand {
         #[clap(short, long)]
         services: Option<String>,
     },
+    /// Preprocess an app's config.*.jinja file by parsing the Tera (jinja-like) template and writing the result to a file
+    #[cfg(feature = "preprocess")]
+    PreprocessConfigFile {
+        /// The config file to run this on
+        config_file: String,
+        /// The env file to get env vars from
+        #[clap(short, long)]
+        env_file: String,
+        /// The app file to run this on
+        #[clap(short, long)]
+        app_file: String,
+        /// The app's ID
+        #[clap(short, long)]
+        app_name: String,
+        /// The output file to save the result to
+        output: String,
+        /// The services that are installed as a list of comma separated values
+        #[clap(short, long)]
+        services: Option<String>,
+    },
     /// Convert an Umbrel app (by app directory path) to a Citadel app.yml file
     /// Manual fixes may be required to make the app.yml work
     #[cfg(feature = "dev-tools")]
@@ -94,60 +114,24 @@ fn main() {
             output,
             port_map,
         } => {
-            let app_yml = std::fs::File::open(app.as_str());
-            if let Err(error) = app_yml {
-                log::error!("Error opening app definition!");
-                log::error!("{}", error);
-                exit(1);
-            }
-            let port_map = std::fs::File::open(port_map.as_str());
-            if let Err(error) = port_map {
-                log::error!("Error opening port map!");
-                log::error!("{}", error);
-                exit(1);
-            }
-            let port_map: Result<serde_json::Map<String, serde_json::Value>, serde_json::Error> =
-                serde_json::from_reader(port_map.unwrap());
-            if port_map.is_err() {
-                log::error!("Error loading port map!");
-                log::error!("{}", port_map.err().unwrap());
-                exit(1);
-            }
-            if port_map.as_ref().unwrap().get(&app_name).is_none() {
+            let app_yml =
+                std::fs::File::open(app.as_str()).expect("Error opening app definition!");
+            let port_map = std::fs::File::open(port_map.as_str()).expect("Error opening port map!");
+            let port_map: serde_json::Map<String, serde_json::Value> =
+                serde_json::from_reader(port_map).expect("Error loading port map!");
+            if port_map.get(&app_name).is_none() {
                 log::error!("App not found in port map!");
                 exit(1);
             }
-
-            if !port_map
-                .as_ref()
-                .unwrap()
-                .get(&app_name)
-                .unwrap()
-                .is_object()
-            {
+            if !port_map.get(&app_name).unwrap().is_object() {
                 log::error!("App definition in port map is invalid!");
                 exit(1);
             }
-            let main_map = port_map.unwrap();
-            let current_app_map = main_map.get(&app_name).unwrap().as_object().unwrap();
-
-            let mut app_definition = String::new();
-            let reading_result = app_yml.unwrap().read_to_string(&mut app_definition);
-            if let Err(error) = reading_result {
-                log::error!("Error during reading: {}", error);
-                exit(1);
-            }
-            let result = convert_config(&app_name, &app_definition, &Some(current_app_map));
-            if let Err(error) = result {
-                log::error!("Error during reading: {}", error);
-                exit(1);
-            }
+            let port_map = port_map.get(&app_name).unwrap().as_object().unwrap();
+            let result = convert_config(&app_name, &app_yml, &Some(port_map))
+                .expect("Failed to convert config!");
             let writer = std::fs::File::create(output.as_str()).unwrap();
-            let serialization_result = serde_yaml::to_writer(writer, &result.unwrap());
-            if serialization_result.is_err() {
-                log::error!("Error saving file!");
-                exit(1);
-            }
+            serde_yaml::to_writer(writer, &result).expect("Failed to save");
         }
         #[cfg(feature = "dev-tools")]
         SubCommand::Schema { version } => match version {
@@ -185,17 +169,10 @@ fn main() {
                     let mut context = Context::new();
                     context.insert("services", &service_list);
                     context.insert("app_name", &app_name);
-                    let result = Tera::one_off(app_definition.as_str(), &context, false);
-                    if let Err(error) = result {
-                        log::error!("Error during preprocessing: {}", error);
-                        continue;
-                    }
+                    let result = Tera::one_off(app_definition.as_str(), &context, false)
+                        .expect("Failed to preprocess");
                     let writer = std::fs::File::create(entry.path().join("app.yml")).unwrap();
-                    let serialization_result = serde_yaml::to_writer(writer, &result.unwrap());
-                    if serialization_result.is_err() {
-                        log::error!("Error saving file!");
-                        continue;
-                    }
+                    serde_yaml::to_writer(writer, &result).expect("Failed to save!");
                 }
             }
         }
@@ -219,6 +196,44 @@ fn main() {
             context.insert("app_name", &app_name);
             let mut tmpl = String::new();
             let reading_result = app_yml.unwrap().read_to_string(&mut tmpl);
+            if reading_result.is_err() {
+                log::error!("Error running templating engine on app definition!");
+                log::error!("{}", reading_result.err().unwrap());
+                exit(1);
+            }
+            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false);
+            if tmpl_result.is_err() {
+                log::error!("Error running templating engine on app definition!");
+                log::error!("{}", tmpl_result.err().unwrap());
+                exit(1);
+            }
+            let mut writer = std::fs::File::create(output.as_str()).unwrap();
+            let writing_result = writer.write(tmpl_result.unwrap().as_bytes());
+            if writing_result.is_err() {
+                log::error!("Error saving file: {}!", writing_result.err().unwrap());
+                exit(1);
+            }
+        }
+        #[cfg(feature = "preprocess")]
+        SubCommand::PreprocessConfigFile {
+            config_file,
+            env_file,
+            app_file,
+            app_name,
+            output,
+            services,
+        } => {
+            todo!();
+            let services = services.unwrap_or_default();
+            let service_list: Vec<&str> = services.split(',').collect();
+            let env_vars = dotenv::from_filename_iter(env_file);
+            let mut app_yml =
+                std::fs::File::open(app_file.as_str()).expect("Error opening app definition!");
+            let mut context = Context::new();
+            context.insert("services", &service_list);
+            context.insert("app_name", &app_name);
+            let mut tmpl = String::new();
+            let reading_result = app_yml.read_to_string(&mut tmpl);
             if reading_result.is_err() {
                 log::error!("Error running templating engine on app definition!");
                 log::error!("{}", reading_result.err().unwrap());
@@ -288,23 +303,8 @@ fn main() {
         }
         #[cfg(feature = "dev-tools")]
         SubCommand::Validate { app, app_name } => {
-            let app_yml = std::fs::File::open(app);
-            if app_yml.is_err() {
-                log::error!("Error opening app definition!");
-                log::error!("{}", app_yml.err().unwrap());
-                exit(1);
-            }
-            let mut app_definition = String::new();
-            let reading_result = app_yml.unwrap().read_to_string(&mut app_definition);
-            if let Err(error) = reading_result {
-                log::error!("Error during reading: {}", error);
-                exit(1);
-            }
-            let result = convert_config(&app_name, &app_definition, &None);
-            if let Err(error) = result {
-                log::error!("Error during converting: {}", error);
-                exit(1);
-            }
+            let app_yml = std::fs::File::open(app).expect("Error opening app definition!");
+            let result = convert_config(&app_name, &app_yml, &None).expect("App is invalid");
             log::info!("App is valid!");
         }
     }
