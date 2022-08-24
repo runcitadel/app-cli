@@ -1,6 +1,9 @@
-use citadel_apps::composegenerator::convert_config;
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
+use citadel_apps::{
+    composegenerator::{convert_config, load_config, permissions::is_allowed_by_permissions},
+    utils::flatten,
+};
 use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
 use std::io::Write;
@@ -114,8 +117,7 @@ fn main() {
             output,
             port_map,
         } => {
-            let app_yml =
-                std::fs::File::open(app.as_str()).expect("Error opening app definition!");
+            let app_yml = std::fs::File::open(app.as_str()).expect("Error opening app definition!");
             let port_map = std::fs::File::open(port_map.as_str()).expect("Error opening port map!");
             let port_map: serde_json::Map<String, serde_json::Value> =
                 serde_json::from_reader(port_map).expect("Error loading port map!");
@@ -223,34 +225,35 @@ fn main() {
             output,
             services,
         } => {
-            todo!();
             let services = services.unwrap_or_default();
             let service_list: Vec<&str> = services.split(',').collect();
-            let env_vars = dotenv::from_filename_iter(env_file);
-            let mut app_yml =
+            #[allow(deprecated)]
+            let env_vars = dotenv::from_filename_iter(env_file).expect("Failed to load .env");
+            let app_yml =
                 std::fs::File::open(app_file.as_str()).expect("Error opening app definition!");
+            let mut config_file =
+                std::fs::File::open(config_file.as_str()).expect("Error opening config file!");
             let mut context = Context::new();
             context.insert("services", &service_list);
             context.insert("app_name", &app_name);
+            let parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
+            match parsed_app_yml {
+                citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
+                    let permissions = flatten(app_yml.metadata.permissions.clone());
+                    let app_id = app_name.as_str();
+                    for item in env_vars {
+                        let (key, val) = item.expect("Env var invalid");
+                        if is_allowed_by_permissions(&app_id, &key, &permissions) {
+                            context.insert(key, &val);
+                        }
+                    }
+                }
+            };
             let mut tmpl = String::new();
-            let reading_result = app_yml.read_to_string(&mut tmpl);
-            if reading_result.is_err() {
-                log::error!("Error running templating engine on app definition!");
-                log::error!("{}", reading_result.err().unwrap());
-                exit(1);
-            }
-            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false);
-            if tmpl_result.is_err() {
-                log::error!("Error running templating engine on app definition!");
-                log::error!("{}", tmpl_result.err().unwrap());
-                exit(1);
-            }
+            config_file.read_to_string(&mut tmpl).expect("Failed to load the config file!");
+            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false).expect("Error running templating engine on app definition!");
             let mut writer = std::fs::File::create(output.as_str()).unwrap();
-            let writing_result = writer.write(tmpl_result.unwrap().as_bytes());
-            if writing_result.is_err() {
-                log::error!("Error saving file: {}!", writing_result.err().unwrap());
-                exit(1);
-            }
+            writer.write(tmpl_result.as_bytes()).expect("Failed to save file");
         }
         #[cfg(feature = "dev-tools")]
         SubCommand::UmbrelToCitadel { app, output } => {
