@@ -304,7 +304,7 @@ fn main() {
         #[cfg(feature = "dev-tools")]
         SubCommand::Validate { app, app_name } => {
             let app_yml = std::fs::File::open(app).expect("Error opening app definition!");
-            let result = convert_config(&app_name, &app_yml, &None).expect("App is invalid");
+            convert_config(&app_name, &app_yml, &None).expect("App is invalid");
             log::info!("App is valid!");
         }
     }
