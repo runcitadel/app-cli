@@ -39,6 +39,7 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
     } else if env_var.starts_with("LND") {
         return permissions.contains(&"lnd".to_string()) && LND_ENV_VARS.contains(&env_var);
     } else if env_var.starts_with("ELECTRUM") {
+        println!("Warning: Environment variables starting with ELECTRUM_ are deprecated. Please use APP_ELECTRUM_* instead");
         return permissions.contains(&"electrum".to_string())
             && ELECTRUM_ENV_VARS.contains(&env_var);
     } else if env_var.starts_with("C_LIGHTNING") {
