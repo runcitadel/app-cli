@@ -258,6 +258,7 @@ fn main() {
                     for i in 1..6 {
                         context.insert(format!("APP_SEED_{}", i), &derive_entropy(&seed_string, format!("app-{}-seed{}", app_id, i).as_str()));
                     }
+                    context.insert("APP_VERSION", &app_yml.metadata.version);
                 }
             };
             let mut tmpl = String::new();
