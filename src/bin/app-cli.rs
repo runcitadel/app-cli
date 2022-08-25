@@ -1,7 +1,7 @@
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
 use citadel_apps::{
-    composegenerator::{convert_config, load_config, permissions::is_allowed_by_permissions},
+    composegenerator::{convert_config, load_config, permissions::is_allowed_by_permissions, utils::derive_entropy},
     utils::flatten,
 };
 use clap::{Parser, Subcommand};
@@ -75,6 +75,9 @@ enum SubCommand {
         app_name: String,
         /// The output file to save the result to
         output: String,
+        /// The citadel seed file
+        #[clap(short, long)]
+        seed_file: String,
         /// The services that are installed as a list of comma separated values
         #[clap(short, long)]
         services: Option<String>,
@@ -222,6 +225,7 @@ fn main() {
             env_file,
             app_file,
             app_name,
+            seed_file,
             output,
             services,
         } => {
@@ -233,6 +237,9 @@ fn main() {
                 std::fs::File::open(app_file.as_str()).expect("Error opening app definition!");
             let mut config_file =
                 std::fs::File::open(config_file.as_str()).expect("Error opening config file!");
+            let mut seed_file = std::fs::File::open(seed_file.as_str()).expect("Error opening seed file!");
+            let mut seed_string = String::new();
+            seed_file.read_to_string(&mut seed_string).expect("Error reading seed file!");
             let mut context = Context::new();
             context.insert("services", &service_list);
             context.insert("app_name", &app_name);
@@ -246,6 +253,10 @@ fn main() {
                         if is_allowed_by_permissions(&app_id, &key, &permissions) {
                             context.insert(key, &val);
                         }
+                    }
+                    context.insert("APP_SEED", &derive_entropy(&seed_string, format!("app-{}-seed", app_id).as_str()));
+                    for i in 1..6 {
+                        context.insert(format!("APP_SEED_{}", i), &derive_entropy(&seed_string, format!("app-{}-seed{}", app_id, i).as_str()));
                     }
                 }
             };

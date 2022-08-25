@@ -21,6 +21,8 @@ env_logger = { version = "0.9", optional = true }
 clap = { version = "3.2", features = ["derive"], optional = true }
 tera = { version = "1", default-features = false, optional = true }
 dotenv = "0.15.0"
+hex = "0.4.3"
+hmac-sha256 = "1.1.4"
 
 [profile.release]
 strip = true

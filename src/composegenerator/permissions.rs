@@ -17,13 +17,14 @@ pub const ELECTRUM_ENV_VARS: [&str; 2] = ["ELECTRUM_IP", "ELECTRUM_PORT"];
 
 pub const C_LIGHTNING_ENV_VARS: [&str; 1] = ["C_LIGHTNING_IP"];
 
-pub const ALWAYS_ALLOWED_ENV_VARS: [&str; 10] = [
+pub const ALWAYS_ALLOWED_ENV_VARS: [&str; 11] = [
     "TOR_PROXY_IP",
     "TOR_PROXY_PORT",
     "APP_DOMAIN",
     "APP_HIDDEN_SERVICE",
     "BITCOIN_NETWORK",
     "APP_SEED",
+    "APP_SEED_1",
     "APP_SEED_2",
     "APP_SEED_3",
     "APP_SEED_4",

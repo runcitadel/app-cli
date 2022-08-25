@@ -8,6 +8,18 @@ use super::v4::types::Command;
 use super::v4::types::PortMapElement;
 use serde_json::Value::Object;
 use crate::utils::find_env_vars;
+use hex;
+use hmac_sha256::HMAC;
+
+pub fn derive_entropy(
+    seed: &str,
+    identifier: &str
+) -> String {
+    let mut hasher = HMAC::new(seed);
+    hasher.update(identifier);
+    let result = hasher.finalize();
+    return hex::encode(result);
+}
 
 pub fn validate_cmd(
     app_name: &str,
@@ -83,12 +95,11 @@ pub fn get_main_container(spec: &ComposeSpecification) -> Result<String, String>
 
 
 #[cfg(test)]
-mod test {
-    use super::validate_port_map_app;
+mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_validate_port_map_app() {
+    fn validate_port_map_app() {
         let example_port_map = json!({
             "main": [
                 {
@@ -98,7 +109,13 @@ mod test {
                 }
             ]
         });
-        let result = validate_port_map_app(example_port_map.as_object().unwrap());
+        let result = super::validate_port_map_app(example_port_map.as_object().unwrap());
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn derive_entropy() {
+        let result = super::derive_entropy("seed", "identifier");
+        assert_eq!(result, "30d473de86ac35de605cc672766d3918c568fcc2df05d4f122a0b2a110d12e39");
     }
 }
