@@ -164,7 +164,7 @@ pub struct PortMapElement {
     /// True if the port is defined by an env var and can be anything
     pub dynamic: bool,
     pub internal_port: u16,
-    pub outside_port: u16,
+    pub public_port: u16,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

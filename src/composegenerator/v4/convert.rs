@@ -34,10 +34,10 @@ fn configure_ports(
                         .to_string(),
                 );
             }
-            let outside_port: Option<&PortMapElement>;
+            let public_port: Option<&PortMapElement>;
             let fake_port = PortMapElement {
                 internal_port,
-                outside_port: internal_port,
+                public_port: internal_port,
                 dynamic: false,
             };
             if let Some(real_port_map) = port_map {
@@ -48,14 +48,14 @@ fn configure_ports(
                     ));
                 }
                 let ports = real_port_map.get(service_name).unwrap();
-                outside_port = get_host_port(ports, internal_port);
+                public_port = get_host_port(ports, internal_port);
             } else {
-                outside_port = Some(&fake_port);
+                public_port = Some(&fake_port);
             }
-            if let Some(port_map_elem) = outside_port {
+            if let Some(port_map_elem) = public_port {
                 service
                     .ports
-                    .push(format!("{}:{}", port_map_elem.outside_port, internal_port));
+                    .push(format!("{}:{}", port_map_elem.public_port, internal_port));
                 break;
             } else {
                 return Err("Main container port not found in port map".to_string());
@@ -338,7 +338,7 @@ pub fn convert_config(
         let conversion_result = validate_port_map_app(real_port_map);
         match conversion_result {
             Err(conversion_error) => {
-                return Err(conversion_error);
+                return Err(conversion_error.to_string());
             }
             Ok(conversion_result) => {
                 converted_port_map = Some(conversion_result);
@@ -381,7 +381,7 @@ pub fn convert_config(
         main_port_host = Some(
             get_host_port(converted_map.get(main_service_name).unwrap(), main_port)
                 .unwrap()
-                .outside_port,
+                .public_port,
         );
     }
 

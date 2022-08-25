@@ -6,6 +6,7 @@ use super::compose::types::ComposeSpecification;
 use super::permissions;
 use super::v4::types::Command;
 use super::v4::types::PortMapElement;
+use serde_json::Value::Object;
 use crate::utils::find_env_vars;
 
 pub fn validate_cmd(
@@ -47,57 +48,8 @@ pub fn get_host_port(
 
 pub fn validate_port_map_app(
     port_map_app: &Map<String, Value>,
-) -> Result<HashMap<String, Vec<PortMapElement>>, String> {
-    let mut result: HashMap<String, Vec<PortMapElement>> =
-        HashMap::<String, Vec<PortMapElement>>::new();
-
-    for container_name in port_map_app.keys() {
-        let container = port_map_app.get(container_name).unwrap();
-        result.insert(container_name.to_string(), Vec::<PortMapElement>::new());
-        let container_result = result.get_mut(container_name).unwrap();
-        if !container.is_array() {
-            return Err("Container invalid in port map".to_string());
-        }
-
-        for element in container.as_array().unwrap() {
-            if !element.is_object()
-                || element.as_object().unwrap().get("publicPort").is_none()
-                || element.as_object().unwrap().get("internalPort").is_none()
-                || element.as_object().unwrap().get("dynamic").is_none()
-                || !element
-                    .as_object()
-                    .unwrap()
-                    .get("publicPort")
-                    .unwrap()
-                    .is_i64()
-                || !element
-                    .as_object()
-                    .unwrap()
-                    .get("internalPort")
-                    .unwrap()
-                    .is_i64()
-                || !element
-                    .as_object()
-                    .unwrap()
-                    .get("dynamic")
-                    .unwrap()
-                    .is_boolean()
-            {
-                return Err("Container invalid in port map".to_string());
-            }
-
-            let elem = element.as_object().unwrap();
-            let entry = PortMapElement {
-                dynamic: elem.get("dynamic").unwrap().as_bool().unwrap(),
-                internal_port: elem.get("internalPort").unwrap().as_i64().unwrap() as u16,
-                outside_port: elem.get("publicPort").unwrap().as_i64().unwrap() as u16,
-            };
-
-            container_result.push(entry);
-        }
-    }
-
-    Ok(result)
+) -> Result<HashMap<String, Vec<PortMapElement>>, serde_json::Error> {
+    serde_json::from_value::<HashMap<String, Vec<PortMapElement>>>(Object(port_map_app.to_owned()))
 }
 
 pub fn get_main_container(spec: &ComposeSpecification) -> Result<String, String> {
@@ -126,5 +78,27 @@ pub fn get_main_container(spec: &ComposeSpecification) -> Result<String, String>
         Ok(main_name)
     } else {
         Err("No main container found!".to_string())
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::validate_port_map_app;
+    use serde_json::json;
+
+    #[test]
+    fn test_validate_port_map_app() {
+        let example_port_map = json!({
+            "main": [
+                {
+                    "internalPort": 3000,
+                    "publicPort": 3000,
+                    "dynamic": true,
+                }
+            ]
+        });
+        let result = validate_port_map_app(example_port_map.as_object().unwrap());
+        assert!(result.is_ok());
     }
 }
