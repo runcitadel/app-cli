@@ -18,7 +18,7 @@ pub fn derive_entropy(
     let mut hasher = HMAC::new(seed);
     hasher.update(identifier);
     let result = hasher.finalize();
-    return hex::encode(result);
+    hex::encode(result)
 }
 
 pub fn validate_cmd(

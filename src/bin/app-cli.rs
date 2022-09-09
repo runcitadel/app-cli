@@ -249,7 +249,7 @@ fn main() {
                     let app_id = app_name.as_str();
                     for item in env_vars {
                         let (key, val) = item.expect("Env var invalid");
-                        if is_allowed_by_permissions(&app_id, &key, &permissions) {
+                        if is_allowed_by_permissions(app_id, &key, &permissions) {
                             context.insert(key, &val);
                         }
                     }
@@ -285,7 +285,7 @@ fn main() {
                 .expect("Error running templating engine on app definition!");
             let mut writer = std::fs::File::create(output.as_str()).unwrap();
             writer
-                .write(tmpl_result.as_bytes())
+                .write_all(tmpl_result.as_bytes())
                 .expect("Failed to save file");
         }
         #[cfg(feature = "dev-tools")]
