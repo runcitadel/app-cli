@@ -1,7 +1,9 @@
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
 use citadel_apps::{
-    composegenerator::{convert_config, load_config, permissions::is_allowed_by_permissions, utils::derive_entropy},
+    composegenerator::{
+        convert_config, load_config, permissions::is_allowed_by_permissions, utils::derive_entropy,
+    },
     utils::flatten,
 };
 use clap::{Parser, Subcommand};
@@ -77,7 +79,7 @@ enum SubCommand {
         output: String,
         /// The citadel seed file
         #[clap(short, long)]
-        seed_file: String,
+        seed_file: Option<String>,
         /// The services that are installed as a list of comma separated values
         #[clap(short, long)]
         services: Option<String>,
@@ -237,9 +239,6 @@ fn main() {
                 std::fs::File::open(app_file.as_str()).expect("Error opening app definition!");
             let mut config_file =
                 std::fs::File::open(config_file.as_str()).expect("Error opening config file!");
-            let mut seed_file = std::fs::File::open(seed_file.as_str()).expect("Error opening seed file!");
-            let mut seed_string = String::new();
-            seed_file.read_to_string(&mut seed_string).expect("Error reading seed file!");
             let mut context = Context::new();
             context.insert("services", &service_list);
             context.insert("app_name", &app_name);
@@ -254,18 +253,40 @@ fn main() {
                             context.insert(key, &val);
                         }
                     }
-                    context.insert("APP_SEED", &derive_entropy(&seed_string, format!("app-{}-seed", app_id).as_str()));
-                    for i in 1..6 {
-                        context.insert(format!("APP_SEED_{}", i), &derive_entropy(&seed_string, format!("app-{}-seed{}", app_id, i).as_str()));
+                    if let Some(seed_path) = seed_file {
+                        let mut seed_file = std::fs::File::open(seed_path.as_str())
+                            .expect("Error opening seed file!");
+                        let mut seed_string = String::new();
+                        seed_file
+                            .read_to_string(&mut seed_string)
+                            .expect("Error reading seed file!");
+                        context.insert(
+                            "APP_SEED",
+                            &derive_entropy(&seed_string, format!("app-{}-seed", app_id).as_str()),
+                        );
+                        for i in 1..6 {
+                            context.insert(
+                                format!("APP_SEED_{}", i),
+                                &derive_entropy(
+                                    &seed_string,
+                                    format!("app-{}-seed{}", app_id, i).as_str(),
+                                ),
+                            );
+                        }
                     }
                     context.insert("APP_VERSION", &app_yml.metadata.version);
                 }
             };
             let mut tmpl = String::new();
-            config_file.read_to_string(&mut tmpl).expect("Failed to load the config file!");
-            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false).expect("Error running templating engine on app definition!");
+            config_file
+                .read_to_string(&mut tmpl)
+                .expect("Failed to load the config file!");
+            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false)
+                .expect("Error running templating engine on app definition!");
             let mut writer = std::fs::File::create(output.as_str()).unwrap();
-            writer.write(tmpl_result.as_bytes()).expect("Failed to save file");
+            writer
+                .write(tmpl_result.as_bytes())
+                .expect("Failed to save file");
         }
         #[cfg(feature = "dev-tools")]
         SubCommand::UmbrelToCitadel { app, output } => {
