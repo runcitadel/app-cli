@@ -232,7 +232,7 @@ fn get_hidden_services(
         let app_name_slug = app_name.to_lowercase().replace('_', "-");
         let service_name_slug = service_name.to_lowercase().replace('_', "-");
         if service_name == main_container {
-            let hidden_service_string = format!("HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:<{}-main-port>\n", app_name_slug, app_name_slug, service_name_slug, service_name_slug);
+            let hidden_service_string = format!("HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:{}\n", app_name_slug, app_name_slug, service_name_slug, original_definition.port.expect("Main container should have port"));
             result += hidden_service_string.as_str();
         }
         if let Some(hidden_services) = &original_definition.hidden_services {
@@ -458,7 +458,7 @@ mod test {
         assert!(result.is_ok());
         let expected_result = FinalResult {
             port: 3000,
-            new_tor_entries: "HiddenServiceDir /var/lib/tor/app-example-app\nHiddenServicePort 80 <app-example-app-main-ip>:<main-main-port>\n".to_string(),
+            new_tor_entries: "HiddenServiceDir /var/lib/tor/app-example-app\nHiddenServicePort 80 <app-example-app-main-ip>:3000\n".to_string(),
             spec: ComposeSpecification {
                 services: Some(map! {
                     "main" => Service {
