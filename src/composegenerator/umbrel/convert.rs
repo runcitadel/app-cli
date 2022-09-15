@@ -1,18 +1,25 @@
 use std::collections::HashMap;
 
+use crate::composegenerator::compose::types::{EnvVars, StringOrInt};
 use crate::composegenerator::umbrel::types::Metadata;
-use crate::composegenerator::v4::types::{Metadata as V4Metadata, Permissions, AppYml, Container, Mounts};
+use crate::composegenerator::v4::types::{
+    AppYml, Container, Metadata as V4Metadata, Mounts, Permissions,
+};
 use crate::map;
 
 pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
-    let deps: Vec<Permissions> = metadata.dependencies.into_iter().map(| dep | -> Permissions {
-        match dep.as_str() {
-            "lightning" => Permissions::OneDependency("lnd".to_string()),
-            "bitcoin" => Permissions::OneDependency("bitcoind".to_string()),
-            "electrs"  => Permissions::OneDependency("electrum".to_string()),
-            _ => Permissions::OneDependency(dep),
-        }
-    }).collect();
+    let deps: Vec<Permissions> = metadata
+        .dependencies
+        .into_iter()
+        .map(|dep| -> Permissions {
+            match dep.as_str() {
+                "lightning" => Permissions::OneDependency("lnd".to_string()),
+                "bitcoin" => Permissions::OneDependency("bitcoind".to_string()),
+                "electrs" => Permissions::OneDependency("electrum".to_string()),
+                _ => Permissions::OneDependency(dep),
+            }
+        })
+        .collect();
     V4Metadata {
         id: None,
         name: metadata.name,
@@ -41,15 +48,18 @@ pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
     }
 }
 
-pub fn convert_compose(compose: crate::composegenerator::compose::types::ComposeSpecification, metadata: Metadata) -> AppYml {
+pub fn convert_compose(
+    compose: crate::composegenerator::compose::types::ComposeSpecification,
+    metadata: Metadata,
+) -> AppYml {
     let services = compose.services.unwrap();
-    let mut result_services: HashMap<String, Container> = HashMap::new(); 
+    let mut result_services: HashMap<String, Container> = HashMap::new();
     for service in services {
         let service_name = service.0;
         let service_def = service.1;
         // We don't have an app_proxy
         if service_name == "app_proxy" {
-            continue
+            continue;
         }
         let mut mounts: Option<Mounts> = Some(Mounts {
             bitcoin: None,
@@ -63,20 +73,27 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             // we add set "/thing" of the mounts.data hashmap to "/data"
             let split = volume.split(':').collect::<Vec<&str>>();
             if split.len() != 2 && split.len() != 3 {
-                continue
+                continue;
             }
             let volume_name = split[0];
             let volume_path = split[1];
             if volume_name.contains("${APP_DATA_DIR}") || volume_name.contains("$APP_DATA_DIR") {
-                let volume_name_without_prefix = volume_name.replace("${APP_DATA_DIR}", "").replace("$APP_DATA_DIR", "");
+                let volume_name_without_prefix = volume_name
+                    .replace("${APP_DATA_DIR}", "")
+                    .replace("$APP_DATA_DIR", "");
                 let volume_name_without_prefix = volume_name_without_prefix.trim_start_matches('/');
-                mounts.as_mut().unwrap().data.as_mut().unwrap().insert(volume_name_without_prefix.to_string(), volume_path.to_string());
+                mounts.as_mut().unwrap().data.as_mut().unwrap().insert(
+                    volume_name_without_prefix.to_string(),
+                    volume_path.to_string(),
+                );
             } else if volume_name.contains("APP_LIGHTNING_NODE_DATA_DIR") {
                 mounts.as_mut().unwrap().lnd = Some(volume_path.to_string());
             } else if volume_name.contains("APP_BITCOIN_DATA_DIR") {
                 mounts.as_mut().unwrap().bitcoin = Some(volume_path.to_string());
             } else if volume_name.contains("APP_CORE_LIGHTNING_REST_CERT_DIR") {
-                mounts.as_mut().unwrap().c_lightning = Some("Please set this yourself, I could not automatically check this.".to_string());
+                mounts.as_mut().unwrap().c_lightning = Some(
+                    "Please set this yourself, I could not automatically check this.".to_string(),
+                );
             }
         }
         // Loop through environment (a Option<hashmap>) and in all values, make these replacements
@@ -85,9 +102,29 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
         // APP_LIGHTNING_NODE_GRPC_PORT -> LND_GRPC_PORT
         // APP_LIGHTNING_NODE_REST_PORT -> LND_REST_PORT
         // APP_LIGHTNING_NODE_IP -> LND_IP
-        let mut env: Option<HashMap<String, String>> = Some(HashMap::new());
-        for (key, value) in service_def.environment.unwrap() {
-            let mut new_value = value.clone();
+        let mut env: Option<HashMap<String, StringOrInt>> = Some(HashMap::new());
+        let original_env = match service_def.environment {
+            Some(env) => match env {
+                EnvVars::List(list) => {
+                    let mut map = HashMap::<String, StringOrInt>::new();
+                    for val in list {
+                        let mut split = val.split("=");
+                        map.insert(
+                            split.next().expect("Env var invalid").to_string(),
+                            StringOrInt::String(split.next().expect("Env var invalid").to_string()),
+                        );
+                    }
+                    map
+                }
+                EnvVars::Map(map) => map,
+            },
+            None => HashMap::<String, StringOrInt>::new(),
+        };
+        for (key, value) in original_env {
+            let mut new_value = match value {
+                StringOrInt::String(str) => str,
+                StringOrInt::Int(int) => int.to_string(),
+            };
             if new_value.contains("APP_BITCOIN_NETWORK") {
                 new_value = new_value.replace("APP_BITCOIN_NETWORK", "BITCOIN_NETWORK");
             }
@@ -103,7 +140,7 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             if new_value.contains("APP_LIGHTNING_NODE_IP") {
                 new_value = new_value.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
             }
-            env.as_mut().unwrap().insert(key, new_value);
+            env.as_mut().unwrap().insert(key, StringOrInt::String(new_value));
         }
         let new_service = Container {
             image: service_def.image.unwrap(),
@@ -118,11 +155,19 @@ pub fn convert_compose(compose: crate::composegenerator::compose::types::Compose
             entrypoint: service_def.entrypoint,
             command: service_def.command,
             environment: env,
-            port: if service_name == "main" || service_name == "web" { Some(metadata.port) } else { None },
+            port: if service_name == "main" || service_name == "web" {
+                Some(metadata.port)
+            } else {
+                None
+            },
             port_priority: None,
             required_ports: None,
             mounts,
-            enable_networking: if service_def.networks.is_some() { None } else { Some(false) },
+            enable_networking: if service_def.networks.is_some() {
+                None
+            } else {
+                Some(false)
+            },
             hidden_services: None,
         };
         result_services.insert(service_name, new_service);

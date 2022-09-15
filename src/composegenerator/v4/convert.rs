@@ -1,6 +1,8 @@
 use serde_json::{json, Map, Value};
 
-use crate::composegenerator::compose::types::{ComposeSpecification, Service};
+use crate::composegenerator::compose::types::{
+    ComposeSpecification, EnvVars, Service, StringOrInt,
+};
 use crate::composegenerator::permissions;
 use crate::composegenerator::utils::{
     get_host_port, get_main_container, validate_cmd, validate_port_map_app,
@@ -133,18 +135,29 @@ fn validate_service(
         result.command = Some(command.clone());
     }
     if service.environment.is_some() {
-        result.environment = Some(HashMap::<String, String>::new());
+        result.environment = Some(EnvVars::Map(HashMap::<String, StringOrInt>::new()));
         let result_env = result.environment.as_mut().unwrap();
         let env = service.environment.as_ref().unwrap();
         for value in env {
             let val = value.1;
-            let env_vars = find_env_vars(val);
-            for env_var in env_vars {
-                if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
-                    return Err(format!("Env var {} not allowed by permissions", env_var));
+            match val {
+                StringOrInt::String(val) => {
+                    let env_vars = find_env_vars(val);
+                    for env_var in env_vars {
+                        if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
+                            return Err(format!("Env var {} not allowed by permissions", env_var));
+                        }
+                    }
                 }
+                StringOrInt::Int(_) => {
+                    // No security validations necessary, a number can't include an env var
+                },
             }
-            result_env.insert(value.0.clone(), val.clone());
+
+            match result_env {
+                EnvVars::List(_) => unreachable!(),
+                EnvVars::Map(map) => map.insert(value.0.clone(), val.clone()),
+            };
         }
     }
     Ok(())
@@ -232,7 +245,15 @@ fn get_hidden_services(
         let app_name_slug = app_name.to_lowercase().replace('_', "-");
         let service_name_slug = service_name.to_lowercase().replace('_', "-");
         if service_name == main_container {
-            let hidden_service_string = format!("HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:{}\n", app_name_slug, app_name_slug, service_name_slug, original_definition.port.expect("Main container should have port"));
+            let hidden_service_string = format!(
+                "HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:{}\n",
+                app_name_slug,
+                app_name_slug,
+                service_name_slug,
+                original_definition
+                    .port
+                    .expect("Main container should have port")
+            );
             result += hidden_service_string.as_str();
         }
         if let Some(hidden_services) = &original_definition.hidden_services {

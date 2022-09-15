@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 use schemars::JsonSchema;
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::ComposeSpecification;
+use crate::composegenerator::compose::types::{ComposeSpecification, StringOrInt};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -132,7 +132,7 @@ pub struct Container {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<Command>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub environment: Option<HashMap<String, String>>,
+    pub environment: Option<HashMap<String, StringOrInt>>,
     // These are not directly present in a compose file and need to be converted
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,

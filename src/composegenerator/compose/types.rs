@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+#[cfg(feature = "schema")]
+use schemars::JsonSchema;
 
 use crate::composegenerator::v4::types::Command;
 
@@ -263,6 +265,22 @@ pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpecItemItemI
     #[serde(skip_serializing_if = "Option::is_none")]
     pub options: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
 }
+
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[serde(untagged)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+pub enum StringOrInt {
+    String(String),
+    Int(i64),
+}
+
+#[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[serde(untagged)]
+pub enum EnvVars {
+    List(Vec<String>),
+    Map(HashMap::<String, StringOrInt>),
+}
+
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
 #[serde(rename = "service")]
 pub struct Service {
@@ -323,7 +341,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub env_file: Option<StringOrList>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub environment: Option<HashMap::<String, String>>,
+    pub environment: Option<EnvVars>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub expose: Option<Vec<serde_yaml::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
