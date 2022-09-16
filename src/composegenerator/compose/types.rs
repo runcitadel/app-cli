@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -10,7 +10,6 @@ pub enum Command {
     SimpleCommand(String),
     ArrayCommand(Vec<String>),
 }
-
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "blkio_limit")]
@@ -285,7 +284,7 @@ pub enum StringOrInt {
 #[serde(untagged)]
 pub enum EnvVars {
     List(Vec<String>),
-    Map(HashMap::<String, StringOrInt>),
+    Map(HashMap<String, StringOrInt>),
 }
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]

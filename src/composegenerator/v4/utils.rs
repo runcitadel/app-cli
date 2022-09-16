@@ -2,18 +2,15 @@ use std::collections::HashMap;
 
 use serde_json::{Map, Value};
 
-use crate::composegenerator::compose::types::{ComposeSpecification, Command};
 use super::permissions;
 use super::types::PortMapElement;
-use serde_json::Value::Object;
+use crate::composegenerator::compose::types::{Command, ComposeSpecification};
 use crate::utils::find_env_vars;
 use hex;
 use hmac_sha256::HMAC;
+use serde_json::Value::Object;
 
-pub fn derive_entropy(
-    seed: &str,
-    identifier: &str
-) -> String {
+pub fn derive_entropy(seed: &str, identifier: &str) -> String {
     let mut hasher = HMAC::new(seed);
     hasher.update(identifier);
     let result = hasher.finalize();
@@ -48,10 +45,7 @@ pub fn validate_cmd(
     Ok(())
 }
 
-pub fn get_host_port(
-    port_map: &[PortMapElement],
-    internal_port: u16,
-) -> Option<&PortMapElement> {
+pub fn get_host_port(port_map: &[PortMapElement], internal_port: u16) -> Option<&PortMapElement> {
     return port_map
         .iter()
         .find(|&elem| elem.internal_port == internal_port);
@@ -92,7 +86,6 @@ pub fn get_main_container(spec: &ComposeSpecification) -> Result<String, String>
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use serde_json::json;
@@ -115,6 +108,9 @@ mod tests {
     #[test]
     fn derive_entropy() {
         let result = super::derive_entropy("seed", "identifier");
-        assert_eq!(result, "30d473de86ac35de605cc672766d3918c568fcc2df05d4f122a0b2a110d12e39");
+        assert_eq!(
+            result,
+            "30d473de86ac35de605cc672766d3918c568fcc2df05d4f122a0b2a110d12e39"
+        );
     }
 }

@@ -54,7 +54,9 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         split_result.remove(0);
         // Remove the _IP / _PORT / _SHAREDSECRET
         split_result.pop();
-        while app_id != &split_result.join("-").to_lowercase() && !permissions.contains(&split_result.join("-").to_lowercase()) {
+        while app_id != &split_result.join("-").to_lowercase()
+            && !permissions.contains(&split_result.join("-").to_lowercase())
+        {
             // Remove stuff until we hit the end of the value
             split_result.pop();
             if split_result.len() == 0 {
@@ -92,13 +94,18 @@ mod test {
 
     #[test]
     fn allow_access_to_apps_with_permission() {
-        let result = is_allowed_by_permissions("example-app", "APP_ANOTHER_APP_CONTAINER_IP", &["another-app".to_string()]);
+        let result = is_allowed_by_permissions(
+            "example-app",
+            "APP_ANOTHER_APP_CONTAINER_IP",
+            &["another-app".to_string()],
+        );
         assert!(result);
     }
 
     #[test]
     fn allow_access_to_builtins_with_permission() {
-        let result = is_allowed_by_permissions("example-app", "BITCOIN_IP", &["bitcoind".to_string()]);
+        let result =
+            is_allowed_by_permissions("example-app", "BITCOIN_IP", &["bitcoind".to_string()]);
         assert!(result);
     }
 
@@ -110,7 +117,15 @@ mod test {
 
     #[test]
     fn allow_access_to_electrum_both_ways() {
-        assert!(is_allowed_by_permissions("example-app", "ELECTRUM_IP", &["electrum".to_string()]));
-        assert!(is_allowed_by_permissions("example-app", "APP_ELECTRUM_IP", &["electrum".to_string()]));
+        assert!(is_allowed_by_permissions(
+            "example-app",
+            "ELECTRUM_IP",
+            &["electrum".to_string()]
+        ));
+        assert!(is_allowed_by_permissions(
+            "example-app",
+            "APP_ELECTRUM_IP",
+            &["electrum".to_string()]
+        ));
     }
 }

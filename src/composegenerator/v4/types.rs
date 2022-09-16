@@ -1,9 +1,9 @@
-use serde::{Serialize, Deserialize};
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::{ComposeSpecification, StringOrInt, Command};
+use crate::composegenerator::compose::types::{Command, ComposeSpecification, StringOrInt};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -12,7 +12,6 @@ pub enum Permissions {
     OneDependency(String),
     AlternativeDependency(Vec<String>),
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

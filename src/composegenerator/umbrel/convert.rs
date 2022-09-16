@@ -140,7 +140,9 @@ pub fn convert_compose(
             if new_value.contains("APP_LIGHTNING_NODE_IP") {
                 new_value = new_value.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
             }
-            env.as_mut().unwrap().insert(key, StringOrInt::String(new_value));
+            env.as_mut()
+                .unwrap()
+                .insert(key, StringOrInt::String(new_value));
         }
         let new_service = Container {
             image: service_def.image.unwrap(),

@@ -11,13 +11,12 @@ pub enum AppYmlFile {
     V4(AppYml),
 }
 
-pub fn load_config<R>(
-    app_reader: R,
-) -> Result<AppYmlFile, String>
+pub fn load_config<R>(app_reader: R) -> Result<AppYmlFile, String>
 where
     R: std::io::Read,
 {
-    let app_yml = serde_yaml::from_reader::<R, serde_yaml::Value>(app_reader).expect("Failed to parse app.yml");
+    let app_yml = serde_yaml::from_reader::<R, serde_yaml::Value>(app_reader)
+        .expect("Failed to parse app.yml");
     if !app_yml.is_mapping() {
         return Err("App.yml is not a map!".to_string());
     }
@@ -30,12 +29,9 @@ where
         4 => {
             let app_definition: Result<AppYml, serde_yaml::Error> = serde_yaml::from_value(app_yml);
             match app_definition {
-                Ok(app_definition) => {
-                    Ok(AppYmlFile::V4(app_definition))
-                }
-                Err(error) => Err(format!("Error loading app.yml as v4: {}", error))
+                Ok(app_definition) => Ok(AppYmlFile::V4(app_definition)),
+                Err(error) => Err(format!("Error loading app.yml as v4: {}", error)),
             }
-            
         }
         _ => Err("Version not supported".to_string()),
     }
@@ -51,6 +47,8 @@ where
 {
     let app_yml = load_config(app_reader).expect("Failed to parse app.yml");
     match app_yml {
-        AppYmlFile::V4(app_definition) => v4::convert::convert_config(app_name, app_definition, port_map)
+        AppYmlFile::V4(app_definition) => {
+            v4::convert::convert_config(app_name, app_definition, port_map)
+        }
     }
 }
