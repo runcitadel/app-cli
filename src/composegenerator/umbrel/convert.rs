@@ -108,7 +108,7 @@ pub fn convert_compose(
                 EnvVars::List(list) => {
                     let mut map = HashMap::<String, StringOrInt>::new();
                     for val in list {
-                        let mut split = val.split("=");
+                        let mut split = val.split('=');
                         map.insert(
                             split.next().expect("Env var invalid").to_string(),
                             StringOrInt::String(split.next().expect("Env var invalid").to_string()),
