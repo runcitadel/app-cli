@@ -3,7 +3,14 @@ use std::collections::HashMap;
 #[cfg(feature = "schema")]
 use schemars::JsonSchema;
 
-use crate::composegenerator::v4::types::Command;
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
+#[serde(untagged)]
+pub enum Command {
+    SimpleCommand(String),
+    ArrayCommand(Vec<String>),
+}
+
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(rename = "blkio_limit")]

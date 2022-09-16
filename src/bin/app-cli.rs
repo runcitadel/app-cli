@@ -2,7 +2,8 @@
 use citadel_apps::composegenerator::v4::types::AppYml;
 use citadel_apps::{
     composegenerator::{
-        convert_config, load_config, permissions::is_allowed_by_permissions, utils::derive_entropy,
+        convert_config, load_config, v4::permissions::is_allowed_by_permissions,
+        v4::utils::derive_entropy,
     },
     utils::flatten,
 };

@@ -68,7 +68,7 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
 
 #[cfg(test)]
 mod test {
-    use crate::composegenerator::permissions::is_allowed_by_permissions;
+    use super::is_allowed_by_permissions;
 
     #[test]
     fn allow_access_to_own_vars() {

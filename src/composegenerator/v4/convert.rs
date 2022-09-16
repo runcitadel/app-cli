@@ -3,11 +3,10 @@ use serde_json::{json, Map, Value};
 use crate::composegenerator::compose::types::{
     ComposeSpecification, EnvVars, Service, StringOrInt,
 };
-use crate::composegenerator::permissions;
-use crate::composegenerator::utils::{
-    get_host_port, get_main_container, validate_cmd, validate_port_map_app,
+use crate::composegenerator::v4::{
+    permissions, types,
+    utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
-use crate::composegenerator::v4::types;
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
 
@@ -151,7 +150,7 @@ fn validate_service(
                 }
                 StringOrInt::Int(_) => {
                     // No security validations necessary, a number can't include an env var
-                },
+                }
             }
 
             match result_env {

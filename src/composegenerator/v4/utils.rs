@@ -2,10 +2,9 @@ use std::collections::HashMap;
 
 use serde_json::{Map, Value};
 
-use super::compose::types::ComposeSpecification;
+use crate::composegenerator::compose::types::{ComposeSpecification, Command};
 use super::permissions;
-use super::v4::types::Command;
-use super::v4::types::PortMapElement;
+use super::types::PortMapElement;
 use serde_json::Value::Object;
 use crate::utils::find_env_vars;
 use hex;

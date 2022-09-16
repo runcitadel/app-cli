@@ -3,15 +3,7 @@ use serde::{Serialize, Deserialize};
 use schemars::JsonSchema;
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::{ComposeSpecification, StringOrInt};
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "schema", derive(JsonSchema))]
-#[serde(untagged)]
-pub enum Command {
-    SimpleCommand(String),
-    ArrayCommand(Vec<String>),
-}
+use crate::composegenerator::compose::types::{ComposeSpecification, StringOrInt, Command};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

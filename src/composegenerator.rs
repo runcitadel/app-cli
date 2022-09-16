@@ -1,8 +1,6 @@
 pub mod compose;
-pub mod permissions;
 #[cfg(feature = "dev-tools")]
 pub mod umbrel;
-pub mod utils;
 pub mod v4;
 
 use serde_json::{Map, Value};
