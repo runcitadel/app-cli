@@ -1,15 +1,21 @@
+use citadel_apps::composegenerator::convert_config;
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
-use citadel_apps::composegenerator::convert_config;
 #[cfg(feature = "preprocess")]
 use citadel_apps::{
-    composegenerator::{load_config, v4::{utils::derive_entropy, permissions::is_allowed_by_permissions}},
+    composegenerator::{
+        load_config,
+        v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
+    },
     utils::flatten,
 };
 use clap::{Parser, Subcommand};
+#[cfg(any(feature = "dev-tools", feature = "preprocess"))]
+use std::process::exit;
+#[cfg(any(feature = "umbrel", feature = "preprocess"))]
+use std::path::Path;
 #[cfg(feature = "preprocess")]
-use std::{io::{Read, Write}, path::Path};
-use std::{process::exit};
+use std::io::{Read, Write};
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
 
@@ -86,7 +92,7 @@ enum SubCommand {
     },
     /// Convert an Umbrel app (by app directory path) to a Citadel app.yml file
     /// Manual fixes may be required to make the app.yml work
-    #[cfg(feature = "dev-tools")]
+    #[cfg(feature = "umbrel")]
     UmbrelToCitadel {
         /// The app directory to run this on
         app: String,
@@ -126,15 +132,10 @@ fn main() {
             let port_map = std::fs::File::open(port_map.as_str()).expect("Error opening port map!");
             let port_map: serde_json::Map<String, serde_json::Value> =
                 serde_json::from_reader(port_map).expect("Error loading port map!");
-            if port_map.get(&app_name).is_none() {
-                log::error!("App not found in port map!");
-                exit(1);
-            }
-            if !port_map.get(&app_name).unwrap().is_object() {
-                log::error!("App definition in port map is invalid!");
-                exit(1);
-            }
-            let port_map = port_map.get(&app_name).unwrap().as_object().unwrap();
+            let port_map_entry = port_map.get(&app_name).expect("App not found in port map!");
+            let port_map = port_map_entry
+                .as_object()
+                .expect("App definition in port map is invalid!");
             let result = convert_config(&app_name, &app_yml, &Some(port_map))
                 .expect("Failed to convert config!");
             let writer = std::fs::File::create(output.as_str()).unwrap();
@@ -192,34 +193,21 @@ fn main() {
         } => {
             let services = services.unwrap_or_default();
             let service_list: Vec<&str> = services.split(',').collect();
-            let app_yml = std::fs::File::open(app.as_str());
-            if app_yml.is_err() {
-                log::error!("Error opening app definition!");
-                log::error!("{}", app_yml.err().unwrap());
-                exit(1);
-            }
+            let mut app_yml =
+                std::fs::File::open(app.as_str()).expect("Error opening app definition!");
             let mut context = Context::new();
             context.insert("services", &service_list);
             context.insert("app_name", &app_name);
             let mut tmpl = String::new();
-            let reading_result = app_yml.unwrap().read_to_string(&mut tmpl);
-            if reading_result.is_err() {
-                log::error!("Error running templating engine on app definition!");
-                log::error!("{}", reading_result.err().unwrap());
-                exit(1);
-            }
-            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false);
-            if tmpl_result.is_err() {
-                log::error!("Error running templating engine on app definition!");
-                log::error!("{}", tmpl_result.err().unwrap());
-                exit(1);
-            }
+            app_yml
+                .read_to_string(&mut tmpl)
+                .expect("Error running templating engine on app definition!");
+            let tmpl_result = Tera::one_off(tmpl.as_str(), &context, false)
+                .expect("Error running templating engine on app definition!");
             let mut writer = std::fs::File::create(output.as_str()).unwrap();
-            let writing_result = writer.write(tmpl_result.unwrap().as_bytes());
-            if writing_result.is_err() {
-                log::error!("Error saving file: {}!", writing_result.err().unwrap());
-                exit(1);
-            }
+            writer
+                .write_all(tmpl_result.as_bytes())
+                .expect("Error saving file!");
         }
         #[cfg(feature = "preprocess")]
         SubCommand::PreprocessConfigFile {
@@ -288,54 +276,23 @@ fn main() {
                 .write_all(tmpl_result.as_bytes())
                 .expect("Failed to save file");
         }
-        #[cfg(feature = "dev-tools")]
+        #[cfg(feature = "umbrel")]
         SubCommand::UmbrelToCitadel { app, output } => {
-            let app_dir = std::fs::read_dir(&app);
-            if app_dir.is_err() {
-                log::error!("Error opening app dir!");
-                log::error!("{}", app_dir.err().unwrap());
-                exit(1);
-            }
-            let compose_yml = std::fs::File::open(app.clone() + "/docker-compose.yml");
-            if compose_yml.is_err() {
-                log::error!("Error opening docker-compose.yml!");
-                log::error!("{}", compose_yml.err().unwrap());
-                exit(1);
-            }
-            let app_yml = std::fs::File::open(app + "/umbrel-app.yml");
-            if app_yml.is_err() {
-                log::error!("Error opening umbrel-app.yml!");
-                log::error!("{}", app_yml.err().unwrap());
-                exit(1);
-            }
-            let app_yml_parsed: Result<
-                citadel_apps::composegenerator::umbrel::types::Metadata,
-                serde_yaml::Error,
-            > = serde_yaml::from_reader(app_yml.unwrap());
-            if app_yml_parsed.is_err() {
-                log::error!("Error parsing umbrel-app.yml!");
-                log::error!("{}", app_yml_parsed.err().unwrap());
-                exit(1);
-            }
-            let compose_yml_parsed: Result<
-                citadel_apps::composegenerator::compose::types::ComposeSpecification,
-                serde_yaml::Error,
-            > = serde_yaml::from_reader(compose_yml.unwrap());
-            if compose_yml_parsed.is_err() {
-                log::error!("Error parsing docker-compose.yml!");
-                log::error!("{}", compose_yml_parsed.err().unwrap());
-                exit(1);
-            }
+            let app_dir = Path::new(&app);
+            let compose_yml = std::fs::File::open(app_dir.join("docker-compose.yml"))
+                .expect("Error opening docker-compose.yml!");
+            let app_yml = std::fs::File::open(app_dir.join("umbrel-app.yml"))
+                .expect("Error opening umbrel-app.yml!");
+            let app_yml_parsed: citadel_apps::composegenerator::umbrel::types::Metadata =
+                serde_yaml::from_reader(app_yml).expect("Error parsing umbrel-app.yml!");
+            let compose_yml_parsed: citadel_apps::composegenerator::compose::types::ComposeSpecification
+             = serde_yaml::from_reader(compose_yml).expect("Error parsing docker-compose.yml!");
             let result = citadel_apps::composegenerator::umbrel::convert::convert_compose(
-                compose_yml_parsed.unwrap(),
-                app_yml_parsed.unwrap(),
+                compose_yml_parsed,
+                app_yml_parsed,
             );
-            let writer = std::fs::File::create(output).unwrap();
-            let serialization_result = serde_yaml::to_writer(writer, &result);
-            if serialization_result.is_err() {
-                log::error!("Error saving file!");
-                exit(1);
-            }
+            let writer = std::fs::File::create(output).expect("Error creating output file");
+            serde_yaml::to_writer(writer, &result).expect("Error saving file!");
         }
         #[cfg(feature = "dev-tools")]
         SubCommand::Validate { app, app_name } => {

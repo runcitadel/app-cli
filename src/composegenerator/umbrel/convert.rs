@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::{EnvVars, StringOrInt};
+use crate::composegenerator::compose::types::{Command, EnvVars, StringOrInt};
 use crate::composegenerator::umbrel::types::Metadata;
 use crate::composegenerator::v4::types::{
     AppYml, Container, Metadata as V4Metadata, Mounts, Permissions,
@@ -48,18 +48,44 @@ pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
     }
 }
 
+fn replace_env_vars(mut string: String) -> String {
+    if string.contains("APP_BITCOIN_NETWORK") {
+        string = string.replace("APP_BITCOIN_NETWORK", "BITCOIN_NETWORK");
+    }
+    if string.contains("APP_LIGHTNING_NODE_GRPC_PORT") {
+        string = string.replace("APP_LIGHTNING_NODE_GRPC_PORT", "LND_GRPC_PORT");
+    }
+    if string.contains("APP_LIGHTNING_NODE_REST_PORT") {
+        string = string.replace("APP_LIGHTNING_NODE_REST_PORT", "LND_REST_PORT");
+    }
+    if string.contains("APP_LIGHTNING_NODE_IP") {
+        string = string.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
+    }
+    if string.contains("APP_ELECTRS_NODE_IP") {
+        string = string.replace("APP_ELECTRS_NODE_IP", "ELECTRUM_IP");
+    }
+    if string.contains("APP_ELECTRS_NODE_PORT") {
+        string = string.replace("APP_ELECTRS_NODE_PORT", "ELECTRUM_PORT");
+    }
+    return string;
+}
+
 pub fn convert_compose(
     compose: crate::composegenerator::compose::types::ComposeSpecification,
     metadata: Metadata,
 ) -> AppYml {
     let services = compose.services.unwrap();
     let mut result_services: HashMap<String, Container> = HashMap::new();
+    let has_main = services.contains_key("main");
     for service in services {
-        let service_name = service.0;
+        let mut service_name = service.0;
         let service_def = service.1;
         // We don't have an app_proxy
         if service_name == "app_proxy" {
             continue;
+        }
+        if service_name == "web" && !has_main {
+            service_name = "main".to_string();
         }
         let mut mounts: Option<Mounts> = Some(Mounts {
             bitcoin: None,
@@ -125,24 +151,52 @@ pub fn convert_compose(
                 StringOrInt::String(str) => str,
                 StringOrInt::Int(int) => int.to_string(),
             };
-            if new_value.contains("APP_BITCOIN_NETWORK") {
-                new_value = new_value.replace("APP_BITCOIN_NETWORK", "BITCOIN_NETWORK");
+            new_value = replace_env_vars(new_value);
+            // If the APP_PASSWORD is also used, there could be a conflict otherwise
+            // For apps which don't use APP_PASSWORD, this can be reverted
+            if new_value.contains("APP_SEED") {
+                new_value = new_value.replace("APP_SEED", "APP_SEED_2");
             }
             if new_value.contains("APP_PASSWORD") {
                 new_value = new_value.replace("APP_PASSWORD", "APP_SEED");
             }
-            if new_value.contains("APP_LIGHTNING_NODE_GRPC_PORT") {
-                new_value = new_value.replace("APP_LIGHTNING_NODE_GRPC_PORT", "LND_GRPC_PORT");
-            }
-            if new_value.contains("APP_LIGHTNING_NODE_REST_PORT") {
-                new_value = new_value.replace("APP_LIGHTNING_NODE_REST_PORT", "LND_REST_PORT");
-            }
-            if new_value.contains("APP_LIGHTNING_NODE_IP") {
-                new_value = new_value.replace("APP_LIGHTNING_NODE_IP", "LND_IP");
-            }
             env.as_mut()
                 .unwrap()
                 .insert(key, StringOrInt::String(new_value));
+        }
+        let mut new_cmd: Option<Command> = None;
+        if let Some(command) = service_def.command {
+            match command {
+                Command::SimpleCommand(mut command) => {
+                    command = replace_env_vars(command);
+                    if command.contains("APP_PASSWORD") {
+                        // If the APP_SEED is also used, use APP_SEED_2 instead so the seed and the password are different
+                        if command.contains("APP_SEED") {
+                            command = command.replace("APP_SEED", "APP_SEED_2");
+                        }
+                        command = command.replace("APP_PASSWORD", "APP_PASSWORD");
+                    }
+                    new_cmd = Some(Command::SimpleCommand(
+                        command,
+                    ));
+                }
+                Command::ArrayCommand(values) => {
+                    let mut result = Vec::<String>::new();
+                    for mut argument in values {
+                        argument = replace_env_vars(argument);
+                        // If the APP_PASSWORD is also used, there could be a conflict otherwise
+                        // For apps which don't use APP_PASSWORD, this can be reverted
+                        if argument.contains("APP_SEED") {
+                            argument = argument.replace("APP_SEED", "APP_SEED_2");
+                        }
+                        if argument.contains("APP_PASSWORD") {
+                            argument = argument.replace("APP_PASSWORD", "APP_PASSWORD");
+                        }
+                        result.push(argument);
+                    }
+                    new_cmd = Some(Command::ArrayCommand(result));
+                }
+            };
         }
         let new_service = Container {
             image: service_def.image.unwrap(),
@@ -155,7 +209,7 @@ pub fn convert_compose(
             init: service_def.init,
             extra_hosts: service_def.extra_hosts,
             entrypoint: service_def.entrypoint,
-            command: service_def.command,
+            command: new_cmd,
             environment: env,
             port: if service_name == "main" || service_name == "web" {
                 Some(metadata.port)
