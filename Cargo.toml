@@ -4,8 +4,7 @@ description = "Handle Citadel app.yml files"
 license = "AGPL-3.0-or-later"
 version = "0.2.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+repository = "https://github.com/runcitadel/app-cli"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
