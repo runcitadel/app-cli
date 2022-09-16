@@ -1,16 +1,17 @@
 use serde_json::{json, Map, Value};
 
+use super::{
+    permissions, types,
+    types::PortMapElement,
+    utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
+};
 use crate::composegenerator::compose::types::{
     ComposeSpecification, EnvVars, Service, StringOrInt,
-};
-use crate::composegenerator::v4::{
-    permissions, types,
-    utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
 
-use super::types::{FinalResult, PortMapElement};
+use crate::composegenerator::types::ResultYml;
 
 fn configure_ports(
     containers: &HashMap<String, types::Container>,
@@ -301,7 +302,7 @@ pub fn convert_config(
     app_name: &str,
     app: types::AppYml,
     port_map: &Option<&Map<String, Value>>,
-) -> Result<FinalResult, String> {
+) -> Result<ResultYml, String> {
     let mut spec: ComposeSpecification = ComposeSpecification {
         // Version is deprecated in the latest compose and should no longer be used
         version: None,
@@ -407,7 +408,7 @@ pub fn convert_config(
 
     let mut metadata = app.metadata.clone();
     metadata.id = Some(app_name.to_string());
-    let result = FinalResult {
+    let result = ResultYml {
         spec,
         new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
         port: main_port_host.unwrap_or(main_port),
@@ -420,16 +421,12 @@ pub fn convert_config(
 
 #[cfg(test)]
 mod test {
+    use super::convert_config;
     use crate::{
         composegenerator::{
             compose::types::{ComposeSpecification, Service},
-            v4::{
-                convert::convert_config,
-                types::AppYml,
-                types::Metadata,
-                types::Permissions,
-                types::{Container, FinalResult},
-            },
+            types::{Metadata, Permissions, ResultYml},
+            v4::types::{AppYml, Container},
         },
         map,
     };
@@ -476,7 +473,7 @@ mod test {
         };
         let result = convert_config("example-app", example_app, &None);
         assert!(result.is_ok());
-        let expected_result = FinalResult {
+        let expected_result = ResultYml {
             port: 3000,
             new_tor_entries: "HiddenServiceDir /var/lib/tor/app-example-app\nHiddenServicePort 80 <app-example-app-main-ip>:3000\n".to_string(),
             spec: ComposeSpecification {

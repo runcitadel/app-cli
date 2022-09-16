@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 
-use crate::composegenerator::v4::types::Permissions;
+use crate::composegenerator::types::Permissions;
 
 lazy_static! {
     // This should have been the following regex originally: \$(\{.*?}|[A-z1-9]+)
@@ -88,7 +88,7 @@ pub fn flatten(perms: Vec<Permissions>) -> Vec<String> {
 
 #[cfg(test)]
 mod test_flatten {
-    use crate::composegenerator::v4::types::Permissions;
+    use crate::composegenerator::types::Permissions;
     use crate::utils::flatten;
 
     #[test]

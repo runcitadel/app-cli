@@ -1,13 +1,14 @@
 use std::collections::HashMap;
 
+use crate::composegenerator::types::{Permissions, Metadata as CitadelMetadata};
 use crate::composegenerator::compose::types::{Command, EnvVars, StringOrInt};
 use crate::composegenerator::umbrel::types::Metadata;
 use crate::composegenerator::v4::types::{
-    AppYml, Container, Metadata as V4Metadata, Mounts, Permissions,
+    AppYml, Container, Mounts,
 };
 use crate::map;
 
-pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
+pub fn convert_metadata(metadata: Metadata) -> CitadelMetadata {
     let deps: Vec<Permissions> = metadata
         .dependencies
         .into_iter()
@@ -20,7 +21,7 @@ pub fn convert_metadata(metadata: Metadata) -> V4Metadata {
             }
         })
         .collect();
-    V4Metadata {
+    CitadelMetadata {
         id: None,
         name: metadata.name,
         version: metadata.version,

@@ -2,13 +2,15 @@ pub mod compose;
 #[cfg(feature = "umbrel")]
 pub mod umbrel;
 pub mod v4;
+pub mod types;
 
 use serde_json::{Map, Value};
 
-use crate::composegenerator::v4::types::{AppYml, FinalResult};
+use self::v4::types::AppYml as AppYmlV4;
+use self::types::ResultYml;
 
 pub enum AppYmlFile {
-    V4(AppYml),
+    V4(AppYmlV4),
 }
 
 pub fn load_config<R>(app_reader: R) -> Result<AppYmlFile, String>
@@ -27,7 +29,7 @@ where
     }
     match app_yml.get("citadel_version").unwrap().as_u64().unwrap() {
         4 => {
-            let app_definition: Result<AppYml, serde_yaml::Error> = serde_yaml::from_value(app_yml);
+            let app_definition: Result<AppYmlV4, serde_yaml::Error> = serde_yaml::from_value(app_yml);
             match app_definition {
                 Ok(app_definition) => Ok(AppYmlFile::V4(app_definition)),
                 Err(error) => Err(format!("Error loading app.yml as v4: {}", error)),
@@ -41,7 +43,7 @@ pub fn convert_config<R>(
     app_name: &str,
     app_reader: R,
     port_map: &Option<&Map<String, Value>>,
-) -> Result<FinalResult, String>
+) -> Result<ResultYml, String>
 where
     R: std::io::Read,
 {
