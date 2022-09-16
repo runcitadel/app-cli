@@ -54,10 +54,14 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         split_result.remove(0);
         // Remove the _IP / _PORT / _SHAREDSECRET
         split_result.pop();
-        // Remove the container name
-        split_result.pop();
-        let app_permission_name = split_result.join("-").to_lowercase();
-        return app_id == app_permission_name || permissions.contains(&app_permission_name);
+        while app_id != &split_result.join("-").to_lowercase() && !permissions.contains(&split_result.join("-").to_lowercase()) {
+            // Remove stuff until we hit the end of the value
+            split_result.pop();
+            if split_result.len() == 0 {
+                return false;
+            }
+        }
+        return true;
     }
     false
 }
@@ -102,5 +106,11 @@ mod test {
     fn always_allow_certain_values() {
         let result = is_allowed_by_permissions("example-app", "BITCOIN_NETWORK", &[]);
         assert!(result);
+    }
+
+    #[test]
+    fn allow_access_to_electrum_both_ways() {
+        assert!(is_allowed_by_permissions("example-app", "ELECTRUM_IP", &["electrum".to_string()]));
+        assert!(is_allowed_by_permissions("example-app", "APP_ELECTRUM_IP", &["electrum".to_string()]));
     }
 }
