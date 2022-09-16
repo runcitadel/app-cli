@@ -67,7 +67,7 @@ fn replace_env_vars(mut string: String) -> String {
     if string.contains("APP_ELECTRS_NODE_PORT") {
         string = string.replace("APP_ELECTRS_NODE_PORT", "ELECTRUM_PORT");
     }
-    return string;
+    string
 }
 
 pub fn convert_compose(
@@ -174,7 +174,7 @@ pub fn convert_compose(
                         if command.contains("APP_SEED") {
                             command = command.replace("APP_SEED", "APP_SEED_2");
                         }
-                        command = command.replace("APP_PASSWORD", "APP_PASSWORD");
+                        command = command.replace("APP_PASSWORD", "APP_SEED");
                     }
                     new_cmd = Some(Command::SimpleCommand(
                         command,
@@ -190,7 +190,7 @@ pub fn convert_compose(
                             argument = argument.replace("APP_SEED", "APP_SEED_2");
                         }
                         if argument.contains("APP_PASSWORD") {
-                            argument = argument.replace("APP_PASSWORD", "APP_PASSWORD");
+                            argument = argument.replace("APP_PASSWORD", "APP_SEED");
                         }
                         result.push(argument);
                     }

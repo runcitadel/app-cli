@@ -54,12 +54,12 @@ pub fn is_allowed_by_permissions(app_id: &str, env_var: &str, permissions: &[Str
         split_result.remove(0);
         // Remove the _IP / _PORT / _SHAREDSECRET
         split_result.pop();
-        while app_id != &split_result.join("-").to_lowercase()
+        while app_id != split_result.join("-").to_lowercase()
             && !permissions.contains(&split_result.join("-").to_lowercase())
         {
             // Remove stuff until we hit the end of the value
             split_result.pop();
-            if split_result.len() == 0 {
+            if split_result.is_empty() {
                 return false;
             }
         }
