@@ -1,16 +1,15 @@
 #[cfg(feature = "dev-tools")]
 use citadel_apps::composegenerator::v4::types::AppYml;
+use citadel_apps::composegenerator::convert_config;
+#[cfg(feature = "preprocess")]
 use citadel_apps::{
-    composegenerator::{
-        convert_config, load_config, v4::permissions::is_allowed_by_permissions,
-        v4::utils::derive_entropy,
-    },
+    composegenerator::{load_config, v4::{utils::derive_entropy, permissions::is_allowed_by_permissions}},
     utils::flatten,
 };
 use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
-use std::io::Write;
-use std::{io::Read, path::Path, process::exit};
+use std::{io::{Read, Write}, path::Path};
+use std::{process::exit};
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
 

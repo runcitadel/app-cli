@@ -1,5 +1,5 @@
 pub mod compose;
-#[cfg(feature = "dev-tools")]
+#[cfg(feature = "umbrel")]
 pub mod umbrel;
 pub mod v4;
 

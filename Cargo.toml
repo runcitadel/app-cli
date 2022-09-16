@@ -35,7 +35,8 @@ required-features = ["cli"]
 
 [features]
 cli = ["dep:clap", "dep:env_logger"]
-dev-tools = ["schema"]
+umbrel = []
+dev-tools = ["umbrel", "schema"]
 schema = ["dep:schemars"]
 preprocess = ["dep:tera"]
 
