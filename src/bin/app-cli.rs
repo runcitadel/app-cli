@@ -1,21 +1,20 @@
 use citadel_apps::composegenerator::convert_config;
+#[cfg(any(feature = "dev-tools", feature = "preprocess"))]
+use citadel_apps::composegenerator::load_config;
 #[cfg(feature = "dev-tools")]
-use citadel_apps::composegenerator::v4::types::AppYml;
+use citadel_apps::{composegenerator::v4::types::AppYml, updates::update_app};
 #[cfg(feature = "preprocess")]
 use citadel_apps::{
-    composegenerator::{
-        load_config,
-        v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
-    },
+    composegenerator::v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
     utils::flatten,
 };
 use clap::{Parser, Subcommand};
-#[cfg(any(feature = "dev-tools", feature = "preprocess"))]
-use std::process::exit;
-#[cfg(any(feature = "umbrel", feature = "preprocess"))]
-use std::path::Path;
 #[cfg(feature = "preprocess")]
 use std::io::{Read, Write};
+#[cfg(any(feature = "umbrel", feature = "preprocess"))]
+use std::path::Path;
+#[cfg(any(feature = "dev-tools", feature = "preprocess"))]
+use std::process::exit;
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
 
@@ -108,6 +107,18 @@ enum SubCommand {
         #[clap(short, long)]
         app_name: String,
     },
+    /// Update the app inside an app.yml to its latest version
+    #[cfg(feature = "dev-tools")]
+    Update {
+        /// The app file to run this on
+        app: String,
+        /// A GitHub token
+        #[clap(short, long)]
+        gh_token: Option<String>,
+        /// Whether to include pre-releases
+        #[clap(short, long)]
+        include_prerelease: bool,
+    },
 }
 
 /// Manage apps on Citadel
@@ -118,7 +129,8 @@ struct Cli {
     command: SubCommand,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     env_logger::init();
     let args: Cli = Cli::parse();
     match args.command {
@@ -299,6 +311,26 @@ fn main() {
             let app_yml = std::fs::File::open(app).expect("Error opening app definition!");
             convert_config(&app_name, &app_yml, &None).expect("App is invalid");
             log::info!("App is valid!");
+        }
+        #[cfg(feature = "dev-tools")]
+        SubCommand::Update {
+            app,
+            gh_token,
+            include_prerelease,
+        } => {
+            if let Some(gh_token) = gh_token {
+                octocrab::initialise(octocrab::OctocrabBuilder::new().personal_token(gh_token))
+                    .expect("Failed to initialise octocrab");
+            }
+            let app_yml = std::fs::File::open(app.clone()).expect("Error opening app definition!");
+            let mut parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
+            update_app(&mut parsed_app_yml, include_prerelease).await;
+            match parsed_app_yml {
+                citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
+                    let writer = std::fs::File::create(app).expect("Error opening app definition!");
+                    serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
+                }
+            }
         }
     }
 }
