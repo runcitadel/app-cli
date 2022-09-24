@@ -83,10 +83,10 @@ enum SubCommand {
         /// The output file to save the result to
         output: String,
         /// The citadel seed file
-        #[clap(short, long)]
+        #[clap(long)]
         seed_file: Option<String>,
         /// The services that are installed as a list of comma separated values
-        #[clap(short, long)]
+        #[clap(long)]
         services: Option<String>,
     },
     /// Convert an Umbrel app (by app directory path) to a Citadel app.yml file
