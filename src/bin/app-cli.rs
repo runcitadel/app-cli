@@ -75,10 +75,10 @@ enum SubCommand {
         #[clap(short, long)]
         env_file: String,
         /// The app file to run this on
-        #[clap(short, long)]
+        #[clap(long)]
         app_file: String,
         /// The app's ID
-        #[clap(short, long)]
+        #[clap(long)]
         app_name: String,
         /// The output file to save the result to
         output: String,
