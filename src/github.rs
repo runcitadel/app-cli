@@ -38,3 +38,29 @@ pub fn get_repo_path(repo_path: &str) -> Option<(String, String)> {
     }
     Some((repo_path[0].to_string(), repo_path[1].to_string()))
 }
+
+
+#[cfg(test)]
+mod test {
+    use super::get_repo_path;
+
+    #[test]
+    fn test_get_repo_path() {
+        let repo_path = "https://github.com/AaronDewes/repo";
+        let repo_path = get_repo_path(repo_path);
+        assert_eq!(repo_path, Some(("AaronDewes".to_string(), "repo".to_string())));
+    }
+
+    #[test]
+    fn test_get_repo_path_invalid() {
+        let repo_path = "https://github.com/AaronDewes/repo/invalid";
+        let repo_path = get_repo_path(repo_path);
+        assert!(repo_path.is_none());
+    }
+    #[test]
+    fn test_get_repo_path_not_github() {
+        let repo_path = "https://gitlab.com/AaronDewes/repo";
+        let repo_path = get_repo_path(repo_path);
+        assert!(repo_path.is_none());
+    }
+}
