@@ -8,7 +8,7 @@ pub async fn get_hash(
     docker: &Docker,
 ) -> Result<String, bollard::errors::Error> {
     println!("Pulling {}...", container);
-    let pull = docker
+    docker
         .create_image(
             Some(CreateImageOptions {
                 from_image: container,
@@ -17,15 +17,9 @@ pub async fn get_hash(
             None,
             None,
         )
-        .try_collect::<Vec<_>>().await;
-    if let Err(pull_error) = pull {
-        return Err(pull_error);
-    }
-    let hash = docker.inspect_image(container).await;
-    if let Err(info_error) = pull {
-        return Err(info_error);
-    }
-    let digests = hash.unwrap().repo_digests.expect("No digest found!");
+        .try_collect::<Vec<_>>().await?;
+    let hash = docker.inspect_image(container).await?;
+    let digests = hash.repo_digests.expect("No digest found!");
     let result = digests.first().expect("No digest found!");
 
     Ok(result.to_owned().split('@').last().unwrap().to_owned())
@@ -41,12 +35,8 @@ pub async fn update_container(container: &mut SchemaItemContainers, to_version: 
         hash = new_image;
     } else {
         new_tag = image_without_tag.to_owned() + ":v" + to_version;
-        let new_image = get_hash(&new_tag, docker).await;
-        if let Ok(new_image) = new_image {
-            hash = new_image;
-        } else {
-            return Err(new_image.unwrap_err());
-        }
+        let new_image = get_hash(&new_tag, docker).await?;
+        hash = new_image;
     }
     container.image = new_tag + "@" + &hash;
     Ok(())
