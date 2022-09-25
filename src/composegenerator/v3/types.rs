@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+#[cfg(feature = "schema")]
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
