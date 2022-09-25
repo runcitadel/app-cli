@@ -1,15 +1,18 @@
 pub mod compose;
+pub mod types;
 #[cfg(feature = "umbrel")]
 pub mod umbrel;
+pub mod v3;
 pub mod v4;
-pub mod types;
 
 use serde_json::{Map, Value};
 
-use self::v4::types::AppYml as AppYmlV4;
 use self::types::ResultYml;
+use self::v3::types::Schema as AppYmlV3;
+use self::v4::types::AppYml as AppYmlV4;
 
 pub enum AppYmlFile {
+    V3(AppYmlV3),
     V4(AppYmlV4),
 }
 
@@ -22,14 +25,30 @@ where
     if !app_yml.is_mapping() {
         return Err("App.yml is not a map!".to_string());
     }
+    let version: u64;
     if app_yml.get("citadel_version").is_none()
         || !app_yml.get("citadel_version").unwrap().is_number()
     {
-        return Err("Citadel file format is not set or not a number!".to_string());
+        if app_yml.get("version").is_some() && app_yml.get("version").unwrap().is_number() {
+            version = app_yml.get("version").unwrap().as_u64().unwrap();
+        } else {
+            return Err("Citadel file format is not set or not a number!".to_string());
+        }
+    } else {
+        version = app_yml.get("citadel_version").unwrap().as_u64().unwrap();
     }
-    match app_yml.get("citadel_version").unwrap().as_u64().unwrap() {
+    match version {
+        3 => {
+            let app_definition: Result<AppYmlV3, serde_yaml::Error> =
+                serde_yaml::from_value(app_yml);
+            match app_definition {
+                Ok(app_definition) => Ok(AppYmlFile::V3(app_definition)),
+                Err(error) => Err(format!("Error loading app.yml as v3: {}", error)),
+            }
+        },
         4 => {
-            let app_definition: Result<AppYmlV4, serde_yaml::Error> = serde_yaml::from_value(app_yml);
+            let app_definition: Result<AppYmlV4, serde_yaml::Error> =
+                serde_yaml::from_value(app_yml);
             match app_definition {
                 Ok(app_definition) => Ok(AppYmlFile::V4(app_definition)),
                 Err(error) => Err(format!("Error loading app.yml as v4: {}", error)),
@@ -52,5 +71,8 @@ where
         AppYmlFile::V4(app_definition) => {
             v4::convert::convert_config(app_name, app_definition, port_map)
         }
+        AppYmlFile::V3(app_definition) => {
+            v3::convert::convert_config(app_name, app_definition, port_map)
+        },
     }
 }

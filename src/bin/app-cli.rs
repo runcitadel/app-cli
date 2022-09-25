@@ -2,7 +2,7 @@ use citadel_apps::composegenerator::convert_config;
 #[cfg(any(feature = "dev-tools", feature = "preprocess"))]
 use citadel_apps::composegenerator::load_config;
 #[cfg(feature = "dev-tools")]
-use citadel_apps::{composegenerator::v4::types::AppYml, updates::update_app};
+use citadel_apps::{composegenerator::v4::types::AppYml, updates::update_app, composegenerator::v3::convert::v3_to_v4};
 #[cfg(feature = "preprocess")]
 use citadel_apps::{
     composegenerator::v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
@@ -114,10 +114,17 @@ enum SubCommand {
         app: String,
         /// A GitHub token
         #[clap(short, long)]
-        gh_token: Option<String>,
+        token: Option<String>,
         /// Whether to include pre-releases
         #[clap(short, long)]
         include_prerelease: bool,
+    },
+    /// Convert an app.yml v3 to an app.yml v4
+    /// v3 added implicit mounts of the bitcoin, lnd and CLN data directories, you can remove them from the output if they are not needed
+    #[cfg(feature = "dev-tools")]
+    V3ToV4 {
+        /// The app file to run this on
+        app: String,
     },
 }
 
@@ -244,6 +251,7 @@ async fn main() {
             context.insert("app_name", &app_name);
             let parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
             match parsed_app_yml {
+                citadel_apps::composegenerator::AppYmlFile::V3(_) => unimplemented!(),
                 citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
                     let permissions = flatten(app_yml.metadata.permissions.clone());
                     let app_id = app_name.as_str();
@@ -315,10 +323,10 @@ async fn main() {
         #[cfg(feature = "dev-tools")]
         SubCommand::Update {
             app,
-            gh_token,
+            token,
             include_prerelease,
         } => {
-            if let Some(gh_token) = gh_token {
+            if let Some(gh_token) = token {
                 octocrab::initialise(octocrab::OctocrabBuilder::new().personal_token(gh_token))
                     .expect("Failed to initialise octocrab");
             }
@@ -330,7 +338,26 @@ async fn main() {
                     let writer = std::fs::File::create(app).expect("Error opening app definition!");
                     serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
                 }
+                citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
+                    let writer = std::fs::File::create(app).expect("Error opening app definition!");
+                    serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
+                },
             }
+        },
+        #[cfg(feature = "dev-tools")]
+        SubCommand::V3ToV4 { app } => {
+            let app_yml = std::fs::File::open(app.clone()).expect("Error opening app definition!");
+            let parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
+            match parsed_app_yml {
+                citadel_apps::composegenerator::AppYmlFile::V4(_) => {
+                    panic!("The app already seems to be an app.yml v4");
+                }
+                citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
+                    let writer = std::fs::File::create(app).expect("Error opening app definition!");
+                    serde_yaml::to_writer(writer, &v3_to_v4(app_yml)).expect("Error saving app definition!");
+                },
+            }
+            log::info!("App is valid!");
         }
     }
 }
