@@ -37,6 +37,9 @@ enum SubCommand {
         /// The port map file
         #[clap(short, long)]
         port_map: String,
+        /// The services that are installed as a list of comma separated values
+        #[clap(long)]
+        services: Option<String>,
     },
     /// Get a JSON schema for the app.yml format
     #[cfg(feature = "dev-tools")]
@@ -151,6 +154,7 @@ async fn main() {
             app_name,
             output,
             port_map,
+            services,
         } => {
             let app_yml = std::fs::File::open(app.as_str()).expect("Error opening app definition!");
             let port_map = std::fs::File::open(port_map.as_str()).expect("Error opening port map!");
@@ -160,8 +164,19 @@ async fn main() {
             let port_map = port_map_entry
                 .as_object()
                 .expect("App definition in port map is invalid!");
-            let result = convert_config(&app_name, &app_yml, &Some(port_map))
-                .expect("Failed to convert config!");
+            let result = convert_config(
+                &app_name,
+                &app_yml,
+                &Some(port_map),
+                &Some(
+                    services
+                        .unwrap_or_default()
+                        .split(',')
+                        .map(|val| val.to_string())
+                        .collect(),
+                ),
+            )
+            .expect("Failed to convert config!");
             let writer = std::fs::File::create(output.as_str()).unwrap();
             serde_yaml::to_writer(writer, &result).expect("Failed to save");
         }
@@ -331,7 +346,7 @@ async fn main() {
         #[cfg(feature = "dev-tools")]
         SubCommand::Validate { app, app_name } => {
             let app_yml = std::fs::File::open(app).expect("Error opening app definition!");
-            convert_config(&app_name, &app_yml, &None).expect("App is invalid");
+            convert_config(&app_name, &app_yml, &None, &None).expect("App is invalid");
             log::info!("App is valid!");
         }
         #[cfg(feature = "dev-tools")]
@@ -368,7 +383,7 @@ async fn main() {
                 }
                 citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
                     let writer = std::fs::File::create(app).expect("Error opening app definition!");
-                    serde_yaml::to_writer(writer, &v3_to_v4(app_yml))
+                    serde_yaml::to_writer(writer, &v3_to_v4(app_yml, &None))
                         .expect("Error saving app definition!");
                 }
             }

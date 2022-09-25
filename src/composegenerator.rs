@@ -62,6 +62,7 @@ pub fn convert_config<R>(
     app_name: &str,
     app_reader: R,
     port_map: &Option<&Map<String, Value>>,
+    installed_services: &Option<Vec<String>>,
 ) -> Result<ResultYml, String>
 where
     R: std::io::Read,
@@ -72,7 +73,11 @@ where
             v4::convert::convert_config(app_name, app_definition, port_map)
         }
         AppYmlFile::V3(app_definition) => {
-            v3::convert::convert_config(app_name, app_definition, port_map)
+            if let Some(installed_services) = installed_services {
+                v3::convert::convert_config(app_name, app_definition, port_map, installed_services)
+            } else {
+                Err("No installed services defined. If you are trying to validate an app, please make sure it is an app.yml v4 or later.".to_string())
+            }
         }
     }
 }

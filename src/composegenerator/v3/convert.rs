@@ -8,7 +8,7 @@ use crate::composegenerator::v4::{
 use crate::utils::flatten;
 use std::collections::HashMap;
 
-pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
+pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> types_v4::AppYml {
     let repo = match app.metadata.repo {
         super::types::RepoDefinition::RepoUrl(url) => HashMap::from([("Public".to_string(), url)]),
         super::types::RepoDefinition::MultiRepo(map) => map,
@@ -31,10 +31,16 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
         description: app.metadata.description,
         implements: None,
     };
-    let mut services =
-        HashMap::<String, types_v4::Container>::with_capacity(app.containers.len());
+    let mut services = HashMap::<String, types_v4::Container>::with_capacity(app.containers.len());
     let deps = flatten(app.metadata.dependencies.unwrap_or_default());
-    for container in app.containers {
+    'container_loop: for container in app.containers {
+        if let Some(installed_services) = installed_services {
+            for dependency in container.requires.clone().unwrap_or_default() {
+                if !installed_services.contains(&dependency) {
+                    continue 'container_loop;
+                }
+            }
+        }
         let mut port_priority = None;
         if container.preferred_outside_port == container.port {
             port_priority = Some(types_v4::PortPriority::Recommended);
@@ -108,7 +114,7 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
                     .to_string(),
             );
         }
-    
+
         services.insert(
             container.name,
             types_v4::Container {
@@ -158,6 +164,7 @@ pub fn convert_config(
     app_name: &str,
     app: AppYmlV3,
     port_map: &Option<&Map<String, Value>>,
+    installed_services: &Vec<String>,
 ) -> Result<ResultYml, String> {
-    convert_config_v4(app_name, v3_to_v4(app), port_map)
+    convert_config_v4(app_name, v3_to_v4(app, &Some(installed_services)), port_map)
 }
