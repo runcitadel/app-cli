@@ -1,6 +1,8 @@
 use citadel_apps::composegenerator::convert_config;
 #[cfg(any(feature = "dev-tools", feature = "preprocess"))]
 use citadel_apps::composegenerator::load_config;
+#[cfg(all(feature = "umbrel", feature = "dev-tools"))]
+use citadel_apps::composegenerator::umbrel::types::Metadata as UmbrelMetadata;
 #[cfg(feature = "dev-tools")]
 use citadel_apps::{
     composegenerator::v3::convert::v3_to_v4, composegenerator::v3::types::SchemaItemContainers,
@@ -20,8 +22,6 @@ use std::path::Path;
 use std::process::exit;
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
-#[cfg(all(feature = "umbrel", feature = "dev-tools"))]
-use citadel_apps::composegenerator::umbrel::types::Metadata as UmbrelMetadata;
 
 #[derive(Subcommand, Debug)]
 enum SubCommand {

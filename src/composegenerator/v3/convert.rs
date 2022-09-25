@@ -80,7 +80,11 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
             mounts.lnd = Some(old_mounts.lnd.unwrap_or_else(|| "/lnd".into()));
         }
         if deps.contains(&"c-lightning".to_string()) && !requires.contains(&"lnd".to_string()) {
-            mounts.c_lightning = Some(old_mounts.c_lightning.unwrap_or_else(|| "/c-lighting".into()));
+            mounts.c_lightning = Some(
+                old_mounts
+                    .c_lightning
+                    .unwrap_or_else(|| "/c-lighting".into()),
+            );
         }
         if deps.contains(&"bitcoin".to_string()) {
             mounts.bitcoin = Some(old_mounts.bitcoin.unwrap_or_else(|| "/bitcoin".into()));

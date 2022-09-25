@@ -1,4 +1,7 @@
-use crate::composegenerator::{v4::update::update_container as update_container_v4, v3::update::update_container as update_container_v3, AppYmlFile};
+use crate::composegenerator::{
+    v3::update::update_container as update_container_v3,
+    v4::update::update_container as update_container_v4, AppYmlFile,
+};
 use crate::github::{check_updates, get_repo_path};
 
 pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {

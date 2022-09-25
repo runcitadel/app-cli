@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use crate::composegenerator::compose::types::{Command, StringOrInt};
 use crate::composegenerator::types::Metadata;
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
@@ -14,8 +13,6 @@ pub enum HiddenServices {
     PortMap(HashMap<u16, u16>),
     LayeredMap(HashMap<String, HashMap<u16, u16>>),
 }
-
-
 
 #[derive(Serialize, Deserialize, Clone, Default, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

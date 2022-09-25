@@ -1,6 +1,11 @@
 use semver::Version;
 
-pub async fn check_updates(owner: &String, repo: &String, current_version: &Version, include_pre: bool) -> Result<String, String> {
+pub async fn check_updates(
+    owner: &String,
+    repo: &String,
+    current_version: &Version,
+    include_pre: bool,
+) -> Result<String, String> {
     let octocrab = octocrab::instance();
     let tags = octocrab.repos(owner, repo).list_tags().send().await;
     if let Err(tag_error) = tags {
@@ -39,7 +44,6 @@ pub fn get_repo_path(repo_path: &str) -> Option<(String, String)> {
     Some((repo_path[0].to_string(), repo_path[1].to_string()))
 }
 
-
 #[cfg(test)]
 mod test {
     use super::get_repo_path;
@@ -48,7 +52,10 @@ mod test {
     fn test_get_repo_path() {
         let repo_path = "https://github.com/AaronDewes/repo";
         let repo_path = get_repo_path(repo_path);
-        assert_eq!(repo_path, Some(("AaronDewes".to_string(), "repo".to_string())));
+        assert_eq!(
+            repo_path,
+            Some(("AaronDewes".to_string(), "repo".to_string()))
+        );
     }
 
     #[test]

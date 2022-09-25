@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
-use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
-use crate::composegenerator::{types::Permissions, compose::types::{Command, StringOrInt}};
+use crate::composegenerator::{
+    compose::types::{Command, StringOrInt},
+    types::Permissions,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
@@ -13,7 +16,6 @@ pub enum HiddenServices {
     LayeredMap(HashMap<String, HashMap<u16, u16>>),
     LegacySyntax(HashMap<String, Vec<u16>>),
 }
-
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]

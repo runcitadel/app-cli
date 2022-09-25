@@ -1,11 +1,9 @@
 use std::collections::HashMap;
 
-use crate::composegenerator::types::{Permissions, Metadata as CitadelMetadata};
 use crate::composegenerator::compose::types::{Command, EnvVars, StringOrInt};
+use crate::composegenerator::types::{Metadata as CitadelMetadata, Permissions};
 use crate::composegenerator::umbrel::types::Metadata;
-use crate::composegenerator::v4::types::{
-    AppYml, Container, Mounts,
-};
+use crate::composegenerator::v4::types::{AppYml, Container, Mounts};
 use crate::map;
 
 pub fn convert_metadata(metadata: Metadata) -> CitadelMetadata {
@@ -177,9 +175,7 @@ pub fn convert_compose(
                         }
                         command = command.replace("APP_PASSWORD", "APP_SEED");
                     }
-                    new_cmd = Some(Command::SimpleCommand(
-                        command,
-                    ));
+                    new_cmd = Some(Command::SimpleCommand(command));
                 }
                 Command::ArrayCommand(values) => {
                     let mut result = Vec::<String>::new();

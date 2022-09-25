@@ -45,7 +45,7 @@ where
                 Ok(app_definition) => Ok(AppYmlFile::V3(app_definition)),
                 Err(error) => Err(format!("Error loading app.yml as v3: {}", error)),
             }
-        },
+        }
         4 => {
             let app_definition: Result<AppYmlV4, serde_yaml::Error> =
                 serde_yaml::from_value(app_yml);
@@ -73,6 +73,6 @@ where
         }
         AppYmlFile::V3(app_definition) => {
             v3::convert::convert_config(app_name, app_definition, port_map)
-        },
+        }
     }
 }
