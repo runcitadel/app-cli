@@ -13,6 +13,73 @@ use std::collections::HashMap;
 
 use crate::composegenerator::types::ResultYml;
 
+fn get_main_port(
+    containers: &HashMap<String, types::Container>,
+    main_container: &str,
+    port_map: &Option<HashMap<String, Vec<PortMapElement>>>,
+) -> Result<u16, String> {
+    let mut result: u16 = 0;
+    for service_name in containers.clone().keys() {
+        let original_definition = containers.get(service_name).unwrap();
+        if service_name != main_container && original_definition.port.is_some() {
+            return Err(
+                "port: is not supported for containers other than the main container".to_string(),
+            );
+        }
+
+        if let Some(internal_port) = original_definition.port {
+            if service_name != main_container {
+                return Err(
+                    "port: is not supported for containers other than the main container"
+                        .to_string(),
+                );
+            }
+            let public_port: Option<&PortMapElement>;
+            let fake_port = PortMapElement {
+                internal_port,
+                public_port: internal_port,
+                dynamic: false,
+            };
+            if let Some(real_port_map) = port_map {
+                if real_port_map.get(service_name).is_none() {
+                    return Err(format!(
+                        "Container {} not found or invalid in port map",
+                        service_name
+                    ));
+                }
+                let ports = real_port_map.get(service_name).unwrap();
+                public_port = get_host_port(ports, internal_port);
+            } else {
+                public_port = Some(&fake_port);
+            }
+            if public_port.is_some() {
+                result = internal_port;
+                break;
+            } else {
+                return Err("Main container port not found in port map".to_string());
+            }
+        } else if service_name == main_container {
+            let empty_vec = Vec::<PortMapElement>::with_capacity(0);
+            if let Some(real_port) = port_map
+                .clone()
+                .unwrap_or_default()
+                .get(service_name)
+                .unwrap_or(&empty_vec)
+                .iter()
+                .find(|elem| elem.dynamic)
+            {
+                result = real_port.internal_port;
+            } else if port_map.is_none() {
+                result = 3000;
+            } else {
+                return Err("A port is required for the main container".to_string());
+            }
+        }
+    }
+
+    Ok(result)
+}
+
 fn configure_ports(
     containers: &HashMap<String, types::Container>,
     main_container: &str,
@@ -63,7 +130,19 @@ fn configure_ports(
                 return Err("Main container port not found in port map".to_string());
             }
         } else if service_name == main_container {
-            return Err("A port is required for the main container".to_string());
+            let empty_vec = Vec::<PortMapElement>::with_capacity(0);
+            if port_map.is_some()
+                && port_map
+                    .clone()
+                    .unwrap_or_default()
+                    .get(service_name)
+                    .unwrap_or(&empty_vec)
+                    .iter()
+                    .find(|elem| elem.dynamic)
+                    .is_none()
+            {
+                return Err("A port is required for the main container".to_string());
+            }
         }
 
         if let Some(required_ports) = &original_definition.required_ports {
@@ -116,6 +195,7 @@ fn validate_service(
     app_name: &str,
     permissions: &[String],
     service: &types::Container,
+    replace_env_vars: &HashMap<String, String>,
     result: &mut Service,
 ) -> Result<(), String> {
     if service.entrypoint.is_some() {
@@ -139,20 +219,30 @@ fn validate_service(
         let result_env = result.environment.as_mut().unwrap();
         let env = service.environment.as_ref().unwrap();
         for value in env {
-            let val = value.1;
-            match val {
+            let val = match value.1 {
                 StringOrInt::String(val) => {
                     let env_vars = find_env_vars(val);
-                    for env_var in env_vars {
+                    for env_var in &env_vars {
                         if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
                             return Err(format!("Env var {} not allowed by permissions", env_var));
                         }
                     }
+                    let mut val = val.clone();
+                    if !env_vars.is_empty() {
+                        let to_replace = replace_env_vars
+                            .iter()
+                            .filter(|(key, _)| env_vars.contains(&key.as_str()));
+                        for (env_var, replacement) in to_replace {
+                            let syntax_1 = "$".to_string() + env_var;
+                            let syntax_2 = format!("${{{}}}", env_var);
+                            val = val.replace(&syntax_1, replacement);
+                            val = val.replace(&syntax_2, replacement);
+                        }
+                    }
+                    StringOrInt::String(val)
                 }
-                StringOrInt::Int(_) => {
-                    // No security validations necessary, a number can't include an env var
-                }
-            }
+                StringOrInt::Int(int) => StringOrInt::Int(*int),
+            };
 
             match result_env {
                 EnvVars::List(_) => unreachable!(),
@@ -315,6 +405,31 @@ pub fn convert_config(
     };
     let spec_services = spec.services.get_or_insert(HashMap::new());
     let permissions = flatten(app.metadata.permissions.clone());
+
+    let main_service = get_main_container(&app)?;
+    let mut converted_port_map: Option<HashMap<String, Vec<PortMapElement>>> = None;
+    if let Some(real_port_map) = port_map {
+        let conversion_result = validate_port_map_app(real_port_map);
+        match conversion_result {
+            Err(conversion_error) => {
+                return Err(conversion_error.to_string());
+            }
+            Ok(conversion_result) => {
+                converted_port_map = Some(conversion_result);
+            }
+        }
+    }
+    let main_port = get_main_port(&app.services, &main_service, &converted_port_map)?;
+
+    // Required for dynamic ports
+    let env_var = format!(
+        "APP_{}_{}_PORT",
+        app_name.replace('-', "_").to_uppercase(),
+        main_service.to_uppercase()
+    );
+
+    let replace_env_vars = HashMap::<String, String>::from([(env_var, main_port.to_string())]);
+
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
     for service_name in app.services.keys() {
         let service = app.services[service_name].clone();
@@ -339,47 +454,17 @@ pub fn convert_config(
             app_name,
             &permissions,
             &service,
+            &replace_env_vars,
             spec_services.get_mut(service_name).unwrap(),
         );
         if validation_result.is_err() {
             return Err(validation_result.err().unwrap());
         }
     }
-
     // We can now finalize the process by parsing some of the remaining values
-    let main_service = get_main_container(&spec);
+    configure_ports(&app.services, &main_service, &mut spec, &converted_port_map)?;
 
-    if main_service.is_err() {
-        return Err(main_service.err().unwrap());
-    }
-
-    let main_service_name = main_service.as_ref().unwrap().as_str();
-    let mut converted_port_map: Option<HashMap<String, Vec<PortMapElement>>> = None;
-    if let Some(real_port_map) = port_map {
-        let conversion_result = validate_port_map_app(real_port_map);
-        match conversion_result {
-            Err(conversion_error) => {
-                return Err(conversion_error.to_string());
-            }
-            Ok(conversion_result) => {
-                converted_port_map = Some(conversion_result);
-            }
-        }
-    }
-
-    let convert_result = configure_ports(
-        &app.services,
-        main_service_name,
-        &mut spec,
-        &converted_port_map,
-    );
-
-    if convert_result.is_err() {
-        return Err(convert_result.err().unwrap());
-    }
-
-    let ip_address_result =
-        define_ip_addresses(app_name, &app.services, main_service_name, &mut spec);
+    let ip_address_result = define_ip_addresses(app_name, &app.services, &main_service, &mut spec);
 
     if ip_address_result.is_err() {
         return Err(ip_address_result.err().unwrap());
@@ -391,16 +476,16 @@ pub fn convert_config(
         return Err(volumes_result.err().unwrap());
     }
 
-    if app.services.get(main_service_name).unwrap().port.is_none() {
+    if app.services.get(&main_service).unwrap().port.is_none() {
         return Err("Main container does not declare port".to_string());
     }
 
-    let main_port = app.services.get(main_service_name).unwrap().port.unwrap();
+    let main_port = app.services.get(&main_service).unwrap().port.unwrap();
 
     let mut main_port_host: Option<u16> = None;
     if let Some(converted_map) = converted_port_map {
         main_port_host = Some(
-            get_host_port(converted_map.get(main_service_name).unwrap(), main_port)
+            get_host_port(converted_map.get(&main_service).unwrap(), main_port)
                 .unwrap()
                 .public_port,
         );
@@ -410,7 +495,7 @@ pub fn convert_config(
     metadata.id = Some(app_name.to_string());
     let result = ResultYml {
         spec,
-        new_tor_entries: get_hidden_services(app_name, &app.services, main_service_name),
+        new_tor_entries: get_hidden_services(app_name, &app.services, &main_service),
         port: main_port_host.unwrap_or(main_port),
         metadata,
     };

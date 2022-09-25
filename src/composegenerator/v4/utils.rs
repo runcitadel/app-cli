@@ -4,7 +4,7 @@ use serde_json::{Map, Value};
 
 use super::permissions;
 use super::types::PortMapElement;
-use crate::composegenerator::compose::types::{Command, ComposeSpecification};
+use crate::composegenerator::compose::types::Command;
 use crate::utils::find_env_vars;
 use hex;
 use hmac_sha256::HMAC;
@@ -57,13 +57,13 @@ pub fn validate_port_map_app(
     serde_json::from_value::<HashMap<String, Vec<PortMapElement>>>(Object(port_map_app.to_owned()))
 }
 
-pub fn get_main_container(spec: &ComposeSpecification) -> Result<String, String> {
+pub fn get_main_container(spec: &super::types::AppYml) -> Result<String, String> {
     let mut main_service_name: Option<String> = Option::<String>::None;
     // We now have a list of services whose dependencies are present
     // And that are mostly validated
     // We can now determine the main container of the app
-    for service_name in spec.services.as_ref().unwrap().keys() {
-        // web is for easier porting from Umbrel
+    for service_name in spec.services.keys() {
+        // web is for easier porting from Umbrel and to preserve compatibility with v3
         if service_name == "main" || service_name == "web" {
             main_service_name = Some(service_name.to_string());
             break;
