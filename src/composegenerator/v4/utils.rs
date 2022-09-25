@@ -58,6 +58,10 @@ pub fn validate_port_map_app(
 }
 
 pub fn get_main_container(spec: &super::types::AppYml) -> Result<String, String> {
+    if spec.services.len() == 1 {
+        Ok(spec.services.keys().next())
+    }
+
     let mut main_service_name: Option<String> = Option::<String>::None;
     // We now have a list of services whose dependencies are present
     // And that are mostly validated
