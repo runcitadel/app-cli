@@ -21,7 +21,7 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
         tagline: app.metadata.tagline,
         developers: app.metadata.developers,
         permissions: app.metadata.dependencies.clone().unwrap_or_default(),
-        repo: repo,
+        repo,
         support: app.metadata.support,
         gallery: app.metadata.gallery,
         path: app.metadata.path,
@@ -77,13 +77,13 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
         let requires = container.requires.unwrap_or_default();
         let old_mounts = container.mounts.unwrap_or_default();
         if deps.contains(&"lnd".to_string()) && !requires.contains(&"c-lightning".to_string()) {
-            mounts.lnd = Some(old_mounts.lnd.unwrap_or("/lnd".into()));
+            mounts.lnd = Some(old_mounts.lnd.unwrap_or_else(|| "/lnd".into()));
         }
         if deps.contains(&"c-lightning".to_string()) && !requires.contains(&"lnd".to_string()) {
-            mounts.c_lightning = Some(old_mounts.c_lightning.unwrap_or("/c-lighting".into()));
+            mounts.c_lightning = Some(old_mounts.c_lightning.unwrap_or_else(|| "/c-lighting".into()));
         }
         if deps.contains(&"bitcoin".to_string()) {
-            mounts.bitcoin = Some(old_mounts.bitcoin.unwrap_or("/bitcoin".into()));
+            mounts.bitcoin = Some(old_mounts.bitcoin.unwrap_or_else(|| "/bitcoin".into()));
         }
         let data_mounts = container.data.unwrap_or_default();
         for value in &data_mounts {
@@ -94,8 +94,14 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
             }
             let mut split = value.split(':');
             mounts.data.as_mut().unwrap().insert(
-                split.next().expect("Failed to parse data value").to_string(),
-                split.next().expect("Failed to parse data value").to_string(),
+                split
+                    .next()
+                    .expect("Failed to parse data value")
+                    .to_string(),
+                split
+                    .next()
+                    .expect("Failed to parse data value")
+                    .to_string(),
             );
         }
         services.insert(
@@ -114,29 +120,25 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
                 command: container.command,
                 environment: container.environment,
                 port: container.port,
-                port_priority: port_priority,
+                port_priority,
                 required_ports,
                 mounts: Some(mounts),
                 enable_networking,
-                hidden_services: match container.hidden_service_ports {
-                    Some(value) => Some(match value {
-                        super::types::HiddenServices::PortMap(map) => {
-                            types_v4::HiddenServices::PortMap(map)
-                        }
-                        super::types::HiddenServices::LayeredMap(map) => {
-                            types_v4::HiddenServices::LayeredMap(map)
-                        }
-                        super::types::HiddenServices::LegacySyntax(map) => {
-                            let new_values = map.iter().map(|val| {
-                                let hashmap =
-                                    HashMap::from_iter(val.1.iter().map(|val| (*val, *val)));
-                                return (val.0.to_owned(), hashmap);
-                            });
-                            types_v4::HiddenServices::LayeredMap(HashMap::from_iter(new_values))
-                        }
-                    }),
-                    None => None,
-                },
+                hidden_services: container.hidden_service_ports.map(|value| match value {
+                    super::types::HiddenServices::PortMap(map) => {
+                        types_v4::HiddenServices::PortMap(map)
+                    }
+                    super::types::HiddenServices::LayeredMap(map) => {
+                        types_v4::HiddenServices::LayeredMap(map)
+                    }
+                    super::types::HiddenServices::LegacySyntax(map) => {
+                        let new_values = map.iter().map(|val| {
+                            let hashmap = HashMap::from_iter(val.1.iter().map(|val| (*val, *val)));
+                            (val.0.to_owned(), hashmap)
+                        });
+                        types_v4::HiddenServices::LayeredMap(HashMap::from_iter(new_values))
+                    }
+                }),
             },
         );
     }

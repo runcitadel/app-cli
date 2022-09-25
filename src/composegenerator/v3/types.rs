@@ -36,7 +36,7 @@ pub struct SchemaItemContainersMounts {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub lnd: Option<String>,
 }
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct SchemaItemContainers {
     pub name: String,
@@ -154,7 +154,7 @@ pub struct SchemaMetadata {
     #[serde(rename = "defaultPassword")]
     pub default_password: Option<String>,
 }
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(deny_unknown_fields)]
 pub struct Schema {
