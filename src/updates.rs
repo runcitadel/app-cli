@@ -5,7 +5,7 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
     let docker = bollard::Docker::connect_with_local_defaults().unwrap();
     match app {
         AppYmlFile::V4(app) => {
-            let update_containers = app.metadata.update_containers.clone().unwrap_or(vec!["main".to_string(), "web".to_string()]);
+            let update_containers = app.metadata.update_containers.clone().unwrap_or_else(|| vec!["main".to_string(), "web".to_string()]);
             let repo = get_repo_path(app.metadata.repo.values().next().unwrap());
             if repo.is_none() {
                 eprintln!("Could not parse repo path");

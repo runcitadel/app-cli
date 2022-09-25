@@ -11,7 +11,7 @@ pub async fn check_updates(owner: &String, repo: &String, current_version: &Vers
         let tag = tag.name;
         // Remove the v prefix if it exists
         let tag = tag.trim_start_matches('v');
-        let version = Version::parse(&tag);
+        let version = Version::parse(tag);
         if let Err(err) = version {
             eprintln!("Error while parsing tag {}: {}", tag, err);
             continue;
