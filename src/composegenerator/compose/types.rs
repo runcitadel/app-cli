@@ -275,16 +275,17 @@ pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpecItemItemI
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(untagged)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
-pub enum StringOrInt {
+pub enum StringOrIntOrBool {
     String(String),
     Int(i64),
+    Bool(bool),
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[serde(untagged)]
 pub enum EnvVars {
     List(Vec<String>),
-    Map(HashMap<String, StringOrInt>),
+    Map(HashMap<String, StringOrIntOrBool>),
 }
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]

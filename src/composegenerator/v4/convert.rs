@@ -6,7 +6,7 @@ use super::{
     utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
 use crate::composegenerator::compose::types::{
-    ComposeSpecification, EnvVars, Service, StringOrInt,
+    ComposeSpecification, EnvVars, Service, StringOrIntOrBool,
 };
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
@@ -214,12 +214,12 @@ fn validate_service(
         result.command = Some(command.clone());
     }
     if service.environment.is_some() {
-        result.environment = Some(EnvVars::Map(HashMap::<String, StringOrInt>::new()));
+        result.environment = Some(EnvVars::Map(HashMap::<String, StringOrIntOrBool>::new()));
         let result_env = result.environment.as_mut().unwrap();
         let env = service.environment.as_ref().unwrap();
         for value in env {
             let val = match value.1 {
-                StringOrInt::String(val) => {
+                StringOrIntOrBool::String(val) => {
                     let env_vars = find_env_vars(val);
                     for env_var in &env_vars {
                         if !permissions::is_allowed_by_permissions(app_name, env_var, permissions) {
@@ -238,9 +238,10 @@ fn validate_service(
                             val = val.replace(&syntax_2, replacement);
                         }
                     }
-                    StringOrInt::String(val)
+                    StringOrIntOrBool::String(val)
                 }
-                StringOrInt::Int(int) => StringOrInt::Int(*int),
+                StringOrIntOrBool::Int(int) => StringOrIntOrBool::Int(*int),
+                StringOrIntOrBool::Bool(bool) => StringOrIntOrBool::Bool(*bool),
             };
 
             match result_env {

@@ -5,7 +5,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::composegenerator::{
-    compose::types::{Command, StringOrInt},
+    compose::types::{Command, StringOrIntOrBool},
     types::Permissions,
 };
 
@@ -57,7 +57,7 @@ pub struct SchemaItemContainers {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<Command>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub environment: Option<HashMap<String, StringOrInt>>,
+    pub environment: Option<HashMap<String, StringOrIntOrBool>>,
     /// This can either be a map of hidden service names (human readable names, not the .onion URL,
     /// and strings, not numbers) to a port if your app needs multiple hidden services on different
     /// ports, a map of port inside to port on the hidden service (if your app has multiple ports

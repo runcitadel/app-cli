@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::{Command, EnvVars, StringOrInt};
+use crate::composegenerator::compose::types::{Command, EnvVars, StringOrIntOrBool};
 use crate::composegenerator::types::{Metadata as CitadelMetadata, Permissions};
 use crate::composegenerator::umbrel::types::Metadata;
 use crate::composegenerator::v4::types::{AppYml, Container, Mounts};
@@ -127,41 +127,43 @@ pub fn convert_compose(
         // APP_LIGHTNING_NODE_GRPC_PORT -> LND_GRPC_PORT
         // APP_LIGHTNING_NODE_REST_PORT -> LND_REST_PORT
         // APP_LIGHTNING_NODE_IP -> LND_IP
-        let mut env: Option<HashMap<String, StringOrInt>> = Some(HashMap::new());
+        let mut env: Option<HashMap<String, StringOrIntOrBool>> = Some(HashMap::new());
         let original_env = match service_def.environment {
             Some(env) => match env {
                 EnvVars::List(list) => {
-                    let mut map = HashMap::<String, StringOrInt>::new();
+                    let mut map = HashMap::<String, StringOrIntOrBool>::new();
                     for val in list {
                         let mut split = val.split('=');
                         map.insert(
                             split.next().expect("Env var invalid").to_string(),
-                            StringOrInt::String(split.next().expect("Env var invalid").to_string()),
+                            StringOrIntOrBool::String(split.next().expect("Env var invalid").to_string()),
                         );
                     }
                     map
                 }
                 EnvVars::Map(map) => map,
             },
-            None => HashMap::<String, StringOrInt>::new(),
+            None => HashMap::<String, StringOrIntOrBool>::new(),
         };
         for (key, value) in original_env {
-            let mut new_value = match value {
-                StringOrInt::String(str) => str,
-                StringOrInt::Int(int) => int.to_string(),
+            let new_value = match value {
+                StringOrIntOrBool::String(str) => {
+                    let mut new_value = replace_env_vars(str);
+                    // If the APP_PASSWORD is also used, there could be a conflict otherwise
+                    // For apps which don't use APP_PASSWORD, this can be reverted
+                    if new_value.contains("APP_SEED") {
+                        new_value = new_value.replace("APP_SEED", "APP_SEED_2");
+                    }
+                    if new_value.contains("APP_PASSWORD") {
+                        new_value = new_value.replace("APP_PASSWORD", "APP_SEED");
+                    }
+                    StringOrIntOrBool::String(new_value)
+                },
+                _ => value,
             };
-            new_value = replace_env_vars(new_value);
-            // If the APP_PASSWORD is also used, there could be a conflict otherwise
-            // For apps which don't use APP_PASSWORD, this can be reverted
-            if new_value.contains("APP_SEED") {
-                new_value = new_value.replace("APP_SEED", "APP_SEED_2");
-            }
-            if new_value.contains("APP_PASSWORD") {
-                new_value = new_value.replace("APP_PASSWORD", "APP_SEED");
-            }
             env.as_mut()
                 .unwrap()
-                .insert(key, StringOrInt::String(new_value));
+                .insert(key, new_value);
         }
         let mut new_cmd: Option<Command> = None;
         if let Some(command) = service_def.command {

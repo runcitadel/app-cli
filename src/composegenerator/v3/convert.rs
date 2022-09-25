@@ -32,8 +32,9 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
         implements: None,
     };
     let mut services =
-        HashMap::<String, types_v4::Container>::with_capacity(app.containers.capacity());
+        HashMap::<String, types_v4::Container>::with_capacity(app.containers.len());
     let deps = flatten(app.metadata.dependencies.unwrap_or_default());
+    let containers = app.containers.len();
     for container in app.containers {
         let mut port_priority = None;
         if container.preferred_outside_port == container.port {
@@ -108,8 +109,13 @@ pub fn v3_to_v4(app: AppYmlV3) -> types_v4::AppYml {
                     .to_string(),
             );
         }
+        let mut name = container.name;
+        if containers == 1 {
+            name = "main".to_string();
+        }
+    
         services.insert(
-            container.name,
+            name,
             types_v4::Container {
                 image: container.image,
                 user: container.user,
