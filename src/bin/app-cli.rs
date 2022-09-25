@@ -2,7 +2,10 @@ use citadel_apps::composegenerator::convert_config;
 #[cfg(any(feature = "dev-tools", feature = "preprocess"))]
 use citadel_apps::composegenerator::load_config;
 #[cfg(feature = "dev-tools")]
-use citadel_apps::{composegenerator::v4::types::AppYml, updates::update_app, composegenerator::v3::convert::v3_to_v4};
+use citadel_apps::{
+    composegenerator::v3::convert::v3_to_v4, composegenerator::v3::types::SchemaItemContainers,
+    composegenerator::v4::types::AppYml, updates::update_app,
+};
 #[cfg(feature = "preprocess")]
 use citadel_apps::{
     composegenerator::v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
@@ -17,6 +20,8 @@ use std::path::Path;
 use std::process::exit;
 #[cfg(feature = "preprocess")]
 use tera::{Context, Tera};
+#[cfg(all(feature = "umbrel", feature = "dev-tools"))]
+use citadel_apps::composegenerator::umbrel::types::Metadata as UmbrelMetadata;
 
 #[derive(Subcommand, Debug)]
 enum SubCommand {
@@ -39,7 +44,7 @@ enum SubCommand {
         /// The version of the app.yml format to get the schema for
         /// (defaults to 4)
         #[clap(short, long, default_value = "4")]
-        version: u8,
+        version: String,
     },
     /// Preprocess a citadel app.yml.jinja file by parsing the Tera (jinja-like) template and writing the result to a file
     /// The YAML is not validated or parsed in any way.
@@ -161,9 +166,18 @@ async fn main() {
             serde_yaml::to_writer(writer, &result).expect("Failed to save");
         }
         #[cfg(feature = "dev-tools")]
-        SubCommand::Schema { version } => match version {
-            4 => {
+        SubCommand::Schema { version } => match version.as_str() {
+            "3" => {
+                let schema = schemars::schema_for!(SchemaItemContainers);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            "4" => {
                 let schema = schemars::schema_for!(AppYml);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            #[cfg(feature = "umbrel")]
+            "umbrel" => {
+                let schema = schemars::schema_for!(UmbrelMetadata);
                 println!("{}", serde_yaml::to_string(&schema).unwrap());
             }
             _ => {
@@ -341,9 +355,9 @@ async fn main() {
                 citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
                     let writer = std::fs::File::create(app).expect("Error opening app definition!");
                     serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
-                },
+                }
             }
-        },
+        }
         #[cfg(feature = "dev-tools")]
         SubCommand::V3ToV4 { app } => {
             let app_yml = std::fs::File::open(app.clone()).expect("Error opening app definition!");
@@ -354,8 +368,9 @@ async fn main() {
                 }
                 citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
                     let writer = std::fs::File::create(app).expect("Error opening app definition!");
-                    serde_yaml::to_writer(writer, &v3_to_v4(app_yml)).expect("Error saving app definition!");
-                },
+                    serde_yaml::to_writer(writer, &v3_to_v4(app_yml))
+                        .expect("Error saving app definition!");
+                }
             }
             log::info!("App is valid!");
         }

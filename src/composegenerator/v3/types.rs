@@ -45,7 +45,6 @@ pub struct SchemaItemContainers {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub command: Option<Command>,
     /// An array of at directories in the container the app stores its data in. Can be empty.
-    /// Please only list top-level directories.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Vec<String>>,
     /// The services the container depends on
