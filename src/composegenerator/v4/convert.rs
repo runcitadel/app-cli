@@ -134,12 +134,11 @@ fn configure_ports(
             if port_map.is_some()
                 && port_map
                     .clone()
-                    .unwrap_or_default()
+                    .unwrap()
                     .get(service_name)
                     .unwrap_or(&empty_vec)
                     .iter()
-                    .find(|elem| elem.dynamic)
-                    .is_none()
+                    .any(|elem| elem.dynamic)
             {
                 return Err("A port is required for the main container".to_string());
             }
