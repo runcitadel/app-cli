@@ -59,7 +59,7 @@ pub fn validate_port_map_app(
 
 pub fn get_main_container(spec: &super::types::AppYml) -> Result<String, String> {
     if spec.services.len() == 1 {
-        return Ok(spec.services.keys().next().unwrap());
+        return Ok(spec.services.keys().next().unwrap().clone());
     }
 
     let mut main_service_name: Option<String> = Option::<String>::None;
