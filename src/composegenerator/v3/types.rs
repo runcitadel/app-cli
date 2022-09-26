@@ -15,7 +15,10 @@ use crate::composegenerator::{
 pub enum HiddenServices {
     PortMap(HashMap<u16, u16>),
     LayeredMap(HashMap<String, HashMap<u16, u16>>),
-    LegacySyntax(HashMap<String, Vec<u16>>),
+    LegacyLayeredMap(HashMap<String, Vec<u16>>),
+    LegacySinglePort(u16),
+    LegacyPortArray(Vec<u16>),
+    LegacyMap(HashMap<String, u16>),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]

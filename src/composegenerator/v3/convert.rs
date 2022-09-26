@@ -142,11 +142,24 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
                     super::types::HiddenServices::LayeredMap(map) => {
                         types_v4::HiddenServices::LayeredMap(map)
                     }
-                    super::types::HiddenServices::LegacySyntax(map) => {
+                    super::types::HiddenServices::LegacyLayeredMap(map) => {
                         let new_values = map.iter().map(|val| {
                             let hashmap = HashMap::from_iter(val.1.iter().map(|val| (*val, *val)));
                             (val.0.to_owned(), hashmap)
                         });
+                        types_v4::HiddenServices::LayeredMap(HashMap::from_iter(new_values))
+                    }
+                    super::types::HiddenServices::LegacySinglePort(port) => {
+                        types_v4::HiddenServices::PortMap(HashMap::from([(port, port)]))
+                    }
+                    super::types::HiddenServices::LegacyPortArray(ports) => {
+                        let hashmap = HashMap::from_iter(ports.iter().map(|val| (*val, *val)));
+                        types_v4::HiddenServices::PortMap(hashmap)
+                    }
+                    super::types::HiddenServices::LegacyMap(map) => {
+                        let new_values = map
+                            .iter()
+                            .map(|(name, port)| (name.to_owned(), HashMap::from([(*port, *port)])));
                         types_v4::HiddenServices::LayeredMap(HashMap::from_iter(new_values))
                     }
                 }),
