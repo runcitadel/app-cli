@@ -132,7 +132,7 @@ fn configure_ports(
         } else if service_name == main_container {
             let empty_vec = Vec::<PortMapElement>::with_capacity(0);
             if port_map.is_some()
-                && port_map
+                && !port_map
                     .clone()
                     .unwrap()
                     .get(service_name)
@@ -325,6 +325,7 @@ fn get_hidden_services(
     app_name: &str,
     containers: &HashMap<String, types::Container>,
     main_container: &str,
+    main_port: u16,
 ) -> String {
     let mut result = String::new();
     for service_name in containers.clone().keys() {
@@ -340,9 +341,7 @@ fn get_hidden_services(
                 app_name_slug,
                 app_name_slug,
                 service_name_slug,
-                original_definition
-                    .port
-                    .expect("Main container should have port")
+                main_port
             );
             result += hidden_service_string.as_str();
         }
@@ -476,12 +475,6 @@ pub fn convert_config(
         return Err(volumes_result.err().unwrap());
     }
 
-    if app.services.get(&main_service).unwrap().port.is_none() {
-        return Err("Main container does not declare port".to_string());
-    }
-
-    let main_port = app.services.get(&main_service).unwrap().port.unwrap();
-
     let mut main_port_host: Option<u16> = None;
     if let Some(converted_map) = converted_port_map {
         main_port_host = Some(
@@ -495,7 +488,7 @@ pub fn convert_config(
     metadata.id = Some(app_name.to_string());
     let result = ResultYml {
         spec,
-        new_tor_entries: get_hidden_services(app_name, &app.services, &main_service),
+        new_tor_entries: get_hidden_services(app_name, &app.services, &main_service, main_port),
         port: main_port_host.unwrap_or(main_port),
         metadata,
     };
