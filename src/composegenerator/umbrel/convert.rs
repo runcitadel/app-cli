@@ -76,6 +76,7 @@ pub fn convert_compose(
     let services = compose.services.unwrap();
     let mut result_services: HashMap<String, Container> = HashMap::new();
     let has_main = services.contains_key("main");
+    let mut deps = Vec::<String>::new();
     for service in services {
         let mut service_name = service.0;
         let service_def = service.1;
@@ -197,6 +198,14 @@ pub fn convert_compose(
                 }
             };
         }
+        if let Some(caps) = &service_def.cap_add {
+            if caps.contains(&"CAP_NET_ADMIN".to_string()) || caps.contains(&"CAP_NET_RAW".to_string()) {
+                deps.push("network".to_string());
+            }
+        }
+        if service_def.network_mode.is_some() {
+            deps.push("network".to_string());
+        }
         let new_service = Container {
             image: service_def.image.unwrap(),
             user: service_def.user,
@@ -224,6 +233,7 @@ pub fn convert_compose(
                 Some(false)
             },
             hidden_services: None,
+            cap_add: service_def.cap_add,
         };
         result_services.insert(service_name, new_service);
     }

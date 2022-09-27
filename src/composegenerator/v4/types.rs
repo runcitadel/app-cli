@@ -59,8 +59,6 @@ pub struct Container {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub depends_on: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub network_mode: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub restart: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub init: Option<bool>,
@@ -73,6 +71,10 @@ pub struct Container {
     pub command: Option<Command>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<HashMap<String, StringOrIntOrBool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cap_add: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub network_mode: Option<String>,
     // These are not directly present in a compose file and need to be converted
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port: Option<u16>,

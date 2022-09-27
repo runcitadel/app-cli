@@ -5,9 +5,9 @@ use super::{
     types::PortMapElement,
     utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
-use crate::composegenerator::compose::types::{
+use crate::composegenerator::{compose::types::{
     ComposeSpecification, EnvVars, Service, StringOrIntOrBool,
-};
+}, types::Permissions};
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
 
@@ -19,7 +19,7 @@ fn get_main_port(
     port_map: &Option<HashMap<String, Vec<PortMapElement>>>,
 ) -> Result<u16, String> {
     let mut result: u16 = 0;
-    for service_name in containers.clone().keys() {
+    for service_name in containers.keys() {
         let original_definition = containers.get(service_name).unwrap();
         if service_name != main_container && original_definition.port.is_some() {
             return Err(
@@ -60,8 +60,7 @@ fn get_main_port(
             }
         } else if service_name == main_container {
             let empty_vec = Vec::<PortMapElement>::with_capacity(0);
-            if let Some(real_port) = port_map
-                .clone()
+            if let Some(real_port) = port_map.clone()
                 .unwrap_or_default()
                 .get(service_name)
                 .unwrap_or(&empty_vec)
@@ -87,8 +86,7 @@ fn configure_ports(
     port_map: &Option<HashMap<String, Vec<PortMapElement>>>,
 ) -> Result<(), String> {
     let services = output.services.as_mut().unwrap();
-    for service_name in services.clone().keys() {
-        let service: &mut Service = services.get_mut(service_name).unwrap();
+    for (service_name, service) in services {
         let original_definition = containers.get(service_name).unwrap();
         if service_name != main_container && original_definition.port.is_some() {
             return Err(
@@ -152,7 +150,7 @@ fn configure_ports(
             }
             if let Some(udp_ports) = &required_ports.udp {
                 for port in udp_ports {
-                    service.ports.push(format!("{}:{}", port.0, port.1));
+                    service.ports.push(format!("{}:{}/udp", port.0, port.1));
                 }
             }
         }
@@ -168,9 +166,7 @@ fn define_ip_addresses(
     output: &mut ComposeSpecification,
 ) -> Result<(), String> {
     let services = output.services.as_mut().unwrap();
-    for service_name in services.clone().keys() {
-        let service: &mut Service = services.get_mut(service_name).unwrap();
-
+    for (service_name, service) in services {
         if containers
             .get(service_name)
             .unwrap()
@@ -192,31 +188,28 @@ fn define_ip_addresses(
 
 fn validate_service(
     app_name: &str,
-    permissions: &[String],
+    permissions: &mut Vec<String>,
     service: &types::Container,
     replace_env_vars: &HashMap<String, String>,
     result: &mut Service,
 ) -> Result<(), String> {
-    if service.entrypoint.is_some() {
-        let entrypoint = service.entrypoint.as_ref().unwrap();
+    if let Some(entrypoint) = &service.entrypoint {
         let validation_result = validate_cmd(app_name, entrypoint, permissions);
         if validation_result.is_err() {
             return Err(validation_result.err().unwrap());
         }
-        result.entrypoint = Some(entrypoint.clone());
+        result.entrypoint = Some(entrypoint.to_owned());
     }
-    if service.command.is_some() {
-        let command = service.command.as_ref().unwrap();
+    if let Some(command) = &service.command {
         let validation_result = validate_cmd(app_name, command, permissions);
         if validation_result.is_err() {
             return Err(validation_result.err().unwrap());
         }
-        result.command = Some(command.clone());
+        result.command = Some(command.to_owned());
     }
-    if service.environment.is_some() {
+    if let Some(env) = &service.environment {
         result.environment = Some(EnvVars::Map(HashMap::<String, StringOrIntOrBool>::new()));
         let result_env = result.environment.as_mut().unwrap();
-        let env = service.environment.as_ref().unwrap();
         for value in env {
             let val = match value.1 {
                 StringOrIntOrBool::String(val) => {
@@ -226,7 +219,7 @@ fn validate_service(
                             return Err(format!("Env var {} not allowed by permissions", env_var));
                         }
                     }
-                    let mut val = val.clone();
+                    let mut val = val.to_owned();
                     if !env_vars.is_empty() {
                         let to_replace = replace_env_vars
                             .iter()
@@ -246,9 +239,34 @@ fn validate_service(
 
             match result_env {
                 EnvVars::List(_) => unreachable!(),
-                EnvVars::Map(map) => map.insert(value.0.clone(), val.clone()),
+                EnvVars::Map(map) => map.insert(value.0.to_owned(), val),
             };
         }
+    }
+    if service.network_mode.is_some()  {
+        if !permissions.contains(&"network".to_string()) {
+            // To preserve compatibility, this is only a warning, but we add the permission to the output
+            eprintln!("App defines network-mode, but does not request the network permission");
+            permissions.push("network".to_string());
+        }
+        result.network_mode = service.network_mode.to_owned();
+    }
+    if let Some(caps) = &service.cap_add {
+        let mut cap_add = Vec::<String>::new();
+        for cap in caps {
+            match cap.to_lowercase().as_str() {
+                "cap-net-raw" | "cap-net-admin" => {
+                    if !permissions.contains(&"network".to_string()) {
+                        return Err("App defines a network capability, but does not request the network permission".to_string());
+                    }
+                    cap_add.push(cap.to_owned());
+                },
+                _ => {
+                    return Err(format!("App defines unknown capability: {}", cap))
+                }
+            }
+        }
+        result.cap_add = Some(cap_add);
     }
     Ok(())
 }
@@ -259,25 +277,24 @@ fn convert_volumes(
     output: &mut ComposeSpecification,
 ) -> Result<(), String> {
     let services = output.services.as_mut().unwrap();
-    for service_name in services.clone().keys() {
-        let service: &mut Service = services.get_mut(service_name).unwrap();
+    for (service_name, service) in services {
         let original_definition = containers.get(service_name).unwrap();
         if let Some(mounts) = &original_definition.mounts {
             if let Some(data_mounts) = &mounts.data {
-                for mount in data_mounts {
-                    if mount.0.contains("..") {
+                for (host_path, container_path) in data_mounts {
+                    if host_path.contains("..") {
                         return Err(
                             "A data dir to mount is not allowed to contain '..'".to_string()
                         );
                     }
-                    let mount_host_dir: String = if !mount.0.starts_with('/') {
-                        "/".to_owned() + mount.0
+                    let mount_host_dir: String = if !host_path.starts_with('/') {
+                        "/".to_owned() + host_path
                     } else {
-                        mount.0.clone()
+                        host_path.clone()
                     };
                     service
                         .volumes
-                        .push(format!("${{APP_DATA_DIR}}{}:{}", mount_host_dir, mount.1));
+                        .push(format!("${{APP_DATA_DIR}}{}:{}", mount_host_dir, container_path));
                 }
             }
 
@@ -323,12 +340,12 @@ fn convert_volumes(
 
 fn get_hidden_services(
     app_name: &str,
-    containers: &HashMap<String, types::Container>,
+    containers: HashMap<String, types::Container>,
     main_container: &str,
     main_port: u16,
 ) -> String {
     let mut result = String::new();
-    for service_name in containers.clone().keys() {
+    for service_name in containers.keys() {
         let original_definition = containers.get(service_name).unwrap();
         if original_definition.network_mode == Some("host".to_string()) {
             continue;
@@ -403,7 +420,7 @@ pub fn convert_config(
         volumes: None,
     };
     let spec_services = spec.services.get_or_insert(HashMap::new());
-    let permissions = flatten(app.metadata.permissions.clone());
+    let mut permissions = flatten(app.metadata.permissions.clone());
 
     let main_service = get_main_container(&app)?;
     let mut converted_port_map: Option<HashMap<String, Vec<PortMapElement>>> = None;
@@ -430,35 +447,28 @@ pub fn convert_config(
     let replace_env_vars = HashMap::<String, String>::from([(env_var, main_port.to_string())]);
 
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
-    for service_name in app.services.keys() {
-        let service = app.services[service_name].clone();
-        let mut base_result = Service {
+    for (service_name, service) in &app.services {
+        let base_result = Service {
             image: Some(service.image.clone()),
             restart: service.restart.clone(),
             stop_grace_period: service.stop_grace_period.clone(),
             stop_signal: service.stop_signal.clone(),
             user: service.user.clone(),
             init: service.init,
-            network_mode: service.network_mode.clone(),
             depends_on: service.depends_on.clone(),
+            extra_hosts: service.extra_hosts.clone(),
             ports: Vec::new(),
             volumes: Vec::new(),
             ..Default::default()
         };
-        if let Some(extra_hosts) = service.extra_hosts.as_ref() {
-            base_result.extra_hosts = Some(extra_hosts.clone());
-        }
         spec_services.insert(service_name.to_string(), base_result);
-        let validation_result = validate_service(
+        validate_service(
             app_name,
-            &permissions,
-            &service,
+            &mut permissions,
+            service,
             &replace_env_vars,
             spec_services.get_mut(service_name).unwrap(),
-        );
-        if validation_result.is_err() {
-            return Err(validation_result.err().unwrap());
-        }
+        )?;
     }
     // We can now finalize the process by parsing some of the remaining values
     configure_ports(&app.services, &main_service, &mut spec, &converted_port_map)?;
@@ -469,11 +479,7 @@ pub fn convert_config(
         return Err(ip_address_result.err().unwrap());
     }
 
-    let volumes_result = convert_volumes(&app.services, &permissions, &mut spec);
-
-    if volumes_result.is_err() {
-        return Err(volumes_result.err().unwrap());
-    }
+    convert_volumes(&app.services, &permissions, &mut spec)?;
 
     let mut main_port_host: Option<u16> = None;
     if let Some(converted_map) = converted_port_map {
@@ -484,11 +490,12 @@ pub fn convert_config(
         );
     }
 
-    let mut metadata = app.metadata.clone();
+    let mut metadata = app.metadata;
     metadata.id = Some(app_name.to_string());
+    metadata.permissions = permissions.iter().map(|val| Permissions::OneDependency(val.to_string())).collect();
     let result = ResultYml {
         spec,
-        new_tor_entries: get_hidden_services(app_name, &app.services, &main_service, main_port),
+        new_tor_entries: get_hidden_services(app_name, app.services, &main_service, main_port),
         port: main_port_host.unwrap_or(main_port),
         metadata,
     };

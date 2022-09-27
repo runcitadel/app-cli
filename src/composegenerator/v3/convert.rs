@@ -163,6 +163,7 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
                         types_v4::HiddenServices::LayeredMap(HashMap::from_iter(new_values))
                     }
                 }),
+                cap_add: None,
             },
         );
     }

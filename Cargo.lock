@@ -194,7 +194,7 @@ dependencies = [
 
 [[package]]
 name = "citadel-apps"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "bollard",
  "clap",
