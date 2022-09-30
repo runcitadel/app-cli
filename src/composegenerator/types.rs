@@ -33,6 +33,8 @@ pub struct Metadata {
     pub tagline: String,
     // Developer name -> their website
     pub developers: HashMap<String, String>,
+    /// A description of the app
+    pub description: String,
     #[serde(default)]
     /// Permissions the app requires
     pub permissions: Vec<Permissions>,
@@ -53,11 +55,11 @@ pub struct Metadata {
     /// A list of containers to update automatically (still validated by the Citadel team)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub update_containers: Option<Vec<String>>,
-    /// A description of the app
-    pub description: String,
     /// For "virtual" apps, the service the app implements
     #[serde(skip_serializing_if = "Option::is_none")]
     pub implements: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version_control: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

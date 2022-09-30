@@ -2,7 +2,8 @@ use crate::composegenerator::{
     v3::update::update_container as update_container_v3,
     v4::update::update_container as update_container_v4, AppYmlFile,
 };
-use crate::github::{check_updates, get_repo_path};
+use crate::github::get_repo_path;
+use crate::hosted_git::check_updates;
 
 pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
     let docker = bollard::Docker::connect_with_local_defaults().unwrap();
@@ -13,20 +14,7 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
                 .update_containers
                 .clone()
                 .unwrap_or_else(|| vec!["main".to_string(), "web".to_string()]);
-            let repo = get_repo_path(app.metadata.repo.values().next().unwrap());
-            if repo.is_none() {
-                eprintln!("Could not parse repo path");
-                return;
-            }
-            let current_version = app.metadata.version.clone();
-            let current_version = semver::Version::parse(&current_version);
-            if current_version.is_err() {
-                eprintln!("Could not parse current version");
-                return;
-            }
-            let current_version = current_version.unwrap();
-            let (owner, repo) = repo.unwrap();
-            let latest_tag = check_updates(&owner, &repo, &current_version, include_pre).await;
+            let latest_tag = check_updates(&app.metadata, include_pre, None).await;
             if let Err(error) = latest_tag {
                 eprintln!("Failed to get latest release: {}", error);
                 return;
@@ -72,7 +60,7 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
             }
             let current_version = current_version.unwrap();
             let (owner, repo) = repo.unwrap();
-            let latest_tag = check_updates(&owner, &repo, &current_version, include_pre).await;
+            let latest_tag = crate::github::check_updates(&owner, &repo, &current_version, include_pre).await;
             if let Err(error) = latest_tag {
                 eprintln!("Failed to get latest release: {}", error);
                 return;

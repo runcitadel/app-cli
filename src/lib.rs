@@ -2,5 +2,9 @@ pub mod composegenerator;
 #[cfg(feature = "dev-tools")]
 pub mod github;
 #[cfg(feature = "dev-tools")]
+pub mod gitlab;
+#[cfg(feature = "dev-tools")]
 pub mod updates;
+#[cfg(feature = "dev-tools")]
+pub mod hosted_git;
 pub mod utils;

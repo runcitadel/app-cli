@@ -22,6 +22,8 @@ bollard = { version = "0.13.0", optional = true }
 futures-util = { version = "0.3.24", optional = true }
 octocrab = { version = "0.17.0", optional = true }
 semver = { version = "1.0.14", optional = true }
+gitlab = { version = "0.1504.0", optional = true }
+url = { version = "2.3.0", optional = true }
 # Only used by the CLI
 env_logger = { version = "0.9", optional = true }
 clap = { version = "3.2", features = ["derive"], optional = true }
@@ -40,7 +42,7 @@ required-features = ["cli"]
 [features]
 cli = ["dep:clap", "dep:env_logger", "dep:tokio", "dep:dotenv"]
 umbrel = []
-dev-tools = ["umbrel", "schema", "docker", "dep:octocrab", "dep:semver"]
+dev-tools = ["umbrel", "schema", "docker", "dep:octocrab", "dep:semver", "dep:gitlab", "dep:url"]
 schema = ["dep:schemars"]
 preprocess = ["dep:tera"]
 docker = ["dep:bollard", "dep:futures-util"]
