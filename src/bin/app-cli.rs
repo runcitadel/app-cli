@@ -144,6 +144,7 @@ struct Cli {
     command: SubCommand,
 }
 
+#[cfg(feature = "dev-tools")]
 async fn update_app_yml(path: &Path, include_prerelease: bool) {
     let app_yml = std::fs::File::open(path).expect("Error opening app definition!");
     let mut parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
