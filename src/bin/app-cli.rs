@@ -147,7 +147,10 @@ struct Cli {
 async fn update_app_yml(path: &Path, include_prerelease: bool) {
     let app_yml = std::fs::File::open(path).expect("Error opening app definition!");
     let mut parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
-    update_app(&mut parsed_app_yml, include_prerelease).await;
+    let update_result = update_app(&mut parsed_app_yml, include_prerelease).await;
+    if update_result.is_err() {
+        return;
+    }
     match parsed_app_yml {
         citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
             let writer = std::fs::File::create(path).expect("Error opening app definition!");

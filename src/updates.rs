@@ -5,7 +5,7 @@ use crate::composegenerator::{
 use crate::github::get_repo_path;
 use crate::hosted_git::check_updates;
 
-pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
+pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) -> Result<(), ()> {
     let docker = bollard::Docker::connect_with_local_defaults().unwrap();
     match app {
         AppYmlFile::V4(app) => {
@@ -17,7 +17,7 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
             let latest_tag = check_updates(&app.metadata, include_pre, None).await;
             if let Err(error) = latest_tag {
                 eprintln!("Failed to get latest release: {}", error);
-                return;
+                return Err(());
             }
             let latest_tag = latest_tag.unwrap();
 
@@ -34,8 +34,10 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
             }
             if failure {
                 eprintln!("Failed to update some containers");
+                Err(())
             } else {
                 app.metadata.version = latest_tag;
+                Ok(())
             }
         }
         AppYmlFile::V3(app) => {
@@ -50,20 +52,20 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
             };
             if repo.is_none() {
                 eprintln!("Could not parse repo path");
-                return;
+                return Err(());
             }
             let current_version = app.metadata.version.clone();
             let current_version = semver::Version::parse(&current_version);
             if current_version.is_err() {
                 eprintln!("Could not parse current version");
-                return;
+                return Err(());
             }
             let current_version = current_version.unwrap();
             let (owner, repo) = repo.unwrap();
             let latest_tag = crate::github::check_updates(&owner, &repo, &current_version, include_pre).await;
             if let Err(error) = latest_tag {
                 eprintln!("Failed to get latest release: {}", error);
-                return;
+                return Err(());
             }
             let latest_tag = latest_tag.unwrap();
 
@@ -80,8 +82,10 @@ pub async fn update_app(app: &mut AppYmlFile, include_pre: bool) {
             }
             if failure {
                 eprintln!("Failed to update some containers");
+                Err(())
             } else {
                 app.metadata.version = latest_tag;
+                Ok(())
             }
         }
     }
