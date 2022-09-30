@@ -118,7 +118,7 @@ enum SubCommand {
     /// Update the app inside an app.yml to its latest version
     #[cfg(feature = "dev-tools")]
     Update {
-        /// The app file to run this on
+        /// The app file or directory to run this on
         app: String,
         /// A GitHub token
         #[clap(short, long)]
@@ -144,6 +144,21 @@ struct Cli {
     command: SubCommand,
 }
 
+async fn update_app_yml(path: &Path, include_prerelease: bool) {
+    let app_yml = std::fs::File::open(path).expect("Error opening app definition!");
+    let mut parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
+    update_app(&mut parsed_app_yml, include_prerelease).await;
+    match parsed_app_yml {
+        citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
+            let writer = std::fs::File::create(path).expect("Error opening app definition!");
+            serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
+        }
+        citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
+            let writer = std::fs::File::create(path).expect("Error opening app definition!");
+            serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
+        }
+    }
+}
 #[tokio::main]
 async fn main() {
     env_logger::init();
@@ -359,18 +374,53 @@ async fn main() {
                 octocrab::initialise(octocrab::OctocrabBuilder::new().personal_token(gh_token))
                     .expect("Failed to initialise octocrab");
             }
-            let app_yml = std::fs::File::open(app.clone()).expect("Error opening app definition!");
-            let mut parsed_app_yml = load_config(app_yml).expect("Failed to parse app.yml");
-            update_app(&mut parsed_app_yml, include_prerelease).await;
-            match parsed_app_yml {
-                citadel_apps::composegenerator::AppYmlFile::V4(app_yml) => {
-                    let writer = std::fs::File::create(app).expect("Error opening app definition!");
-                    serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
+            let path = std::path::Path::new(&app);
+            if path.is_file() {
+                update_app_yml(path, include_prerelease).await;
+            } else if path.is_dir() {
+                let app_yml_path = path.join("app.yml");
+                if app_yml_path.is_file() {
+                    update_app_yml(&app_yml_path, include_prerelease).await;
+                } else {
+                    let subdirs = std::fs::read_dir(path).expect("Failed to read directory");
+                    for subdir in subdirs {
+                        let subdir = subdir.unwrap_or_else(|_| {
+                            panic!("Failed to read subdir/file in {}", path.display())
+                        });
+                        let file_type = subdir.file_type().unwrap_or_else(|_| {
+                            panic!(
+                                "Failed to get filetype of {}/{}",
+                                path.display(),
+                                subdir.file_name().to_string_lossy()
+                            )
+                        });
+                        if file_type.is_file() {
+                            continue;
+                        } else if file_type.is_symlink() {
+                            eprintln!(
+                                "Symlinks like {}/{} are not supported yet!",
+                                path.display(),
+                                subdir.file_name().to_string_lossy()
+                            );
+                        } else if file_type.is_dir() {
+                            let sub_app_yml = subdir.path().join("app.yml");
+                            if sub_app_yml.is_file() {
+                                update_app_yml(&sub_app_yml, include_prerelease).await;
+                            } else {
+                                eprintln!(
+                                    "{}/{}/app.yml does not exist or is not a file!",
+                                    path.display(),
+                                    subdir.file_name().to_string_lossy()
+                                );
+                                continue;
+                            }
+                        } else {
+                            unreachable!();
+                        }
+                    }
                 }
-                citadel_apps::composegenerator::AppYmlFile::V3(app_yml) => {
-                    let writer = std::fs::File::create(app).expect("Error opening app definition!");
-                    serde_yaml::to_writer(writer, &app_yml).expect("Error saving app definition!");
-                }
+            } else {
+                panic!();
             }
         }
         #[cfg(feature = "dev-tools")]
