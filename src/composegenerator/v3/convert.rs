@@ -130,6 +130,7 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
                 extra_hosts: None,
                 entrypoint: container.entrypoint,
                 command: container.command,
+                working_dir: None,
                 environment: container.environment,
                 port: container.port,
                 port_priority,

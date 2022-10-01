@@ -218,6 +218,7 @@ pub fn convert_compose(
             init: service_def.init,
             extra_hosts: service_def.extra_hosts,
             entrypoint: service_def.entrypoint,
+            working_dir: None,
             command: new_cmd,
             environment: env,
             port: if service_name == "main" || service_name == "web" {

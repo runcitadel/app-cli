@@ -457,6 +457,7 @@ pub fn convert_config(
             init: service.init,
             depends_on: service.depends_on.clone(),
             extra_hosts: service.extra_hosts.clone(),
+            working_dir: service.working_dir.clone(),
             ports: Vec::new(),
             volumes: Vec::new(),
             ..Default::default()

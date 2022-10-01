@@ -64,6 +64,8 @@ pub struct Container {
     pub init: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_hosts: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub working_dir: Option<String>,
     // These need security checks
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entrypoint: Option<Command>,
