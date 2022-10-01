@@ -5,9 +5,10 @@ use super::{
     types::PortMapElement,
     utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
-use crate::composegenerator::{compose::types::{
-    ComposeSpecification, EnvVars, Service, StringOrIntOrBool,
-}, types::Permissions};
+use crate::composegenerator::{
+    compose::types::{ComposeSpecification, EnvVars, Service, StringOrIntOrBool},
+    types::Permissions,
+};
 use crate::utils::{find_env_vars, flatten};
 use std::collections::HashMap;
 
@@ -60,7 +61,8 @@ fn get_main_port(
             }
         } else if service_name == main_container {
             let empty_vec = Vec::<PortMapElement>::with_capacity(0);
-            if let Some(real_port) = port_map.clone()
+            if let Some(real_port) = port_map
+                .clone()
                 .unwrap_or_default()
                 .get(service_name)
                 .unwrap_or(&empty_vec)
@@ -243,7 +245,7 @@ fn validate_service(
             };
         }
     }
-    if service.network_mode.is_some()  {
+    if service.network_mode.is_some() {
         if !permissions.contains(&"network".to_string()) {
             // To preserve compatibility, this is only a warning, but we add the permission to the output
             eprintln!("App defines network-mode, but does not request the network permission");
@@ -260,10 +262,8 @@ fn validate_service(
                         return Err("App defines a network capability, but does not request the network permission".to_string());
                     }
                     cap_add.push(cap.to_owned());
-                },
-                _ => {
-                    return Err(format!("App defines unknown capability: {}", cap))
                 }
+                _ => return Err(format!("App defines unknown capability: {}", cap)),
             }
         }
         result.cap_add = Some(cap_add);
@@ -292,9 +292,10 @@ fn convert_volumes(
                     } else {
                         host_path.clone()
                     };
-                    service
-                        .volumes
-                        .push(format!("${{APP_DATA_DIR}}{}:{}", mount_host_dir, container_path));
+                    service.volumes.push(format!(
+                        "${{APP_DATA_DIR}}{}:{}",
+                        mount_host_dir, container_path
+                    ));
                 }
             }
 
@@ -355,10 +356,7 @@ fn get_hidden_services(
         if service_name == main_container {
             let hidden_service_string = format!(
                 "HiddenServiceDir /var/lib/tor/app-{}\nHiddenServicePort 80 <app-{}-{}-ip>:{}\n",
-                app_name_slug,
-                app_name_slug,
-                service_name_slug,
-                main_port
+                app_name_slug, app_name_slug, service_name_slug, main_port
             );
             result += hidden_service_string.as_str();
         }
@@ -444,7 +442,11 @@ pub fn convert_config(
         main_service.to_uppercase()
     );
 
-    let replace_env_vars = HashMap::<String, String>::from([(env_var, main_port.to_string())]);
+    let replace_env_vars = HashMap::<String, String>::from([
+        (env_var, main_port.to_string()),
+        ("ELECTRUM_IP".to_string(), "${APP_ELECTRUM_IP}".to_string()),
+        ("ELECTRUM_PORT".to_string(), "${APP_ELECTRUM_PORT}".to_string()),
+    ]);
 
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
     for (service_name, service) in &app.services {
@@ -493,7 +495,10 @@ pub fn convert_config(
 
     let mut metadata = app.metadata;
     metadata.id = Some(app_name.to_string());
-    metadata.permissions = permissions.iter().map(|val| Permissions::OneDependency(val.to_string())).collect();
+    metadata.permissions = permissions
+        .iter()
+        .map(|val| Permissions::OneDependency(val.to_string()))
+        .collect();
     let result = ResultYml {
         spec,
         new_tor_entries: get_hidden_services(app_name, app.services, &main_service, main_port),
