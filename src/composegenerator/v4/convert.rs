@@ -445,7 +445,7 @@ pub fn convert_config(
     let replace_env_vars = HashMap::<String, String>::from([
         (env_var, main_port.to_string()),
         ("ELECTRUM_IP".to_string(), "${APP_ELECTRUM_IP}".to_string()),
-        ("ELECTRUM_PORT".to_string(), "${APP_ELECTRUM_PORT}".to_string()),
+        ("ELECTRUM_PORT".to_string(), "50001".to_string()),
     ]);
 
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
