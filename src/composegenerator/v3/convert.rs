@@ -90,7 +90,7 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
             mounts.c_lightning = Some(
                 old_mounts
                     .c_lightning
-                    .unwrap_or_else(|| "/c-lighting".into()),
+                    .unwrap_or_else(|| "/c-lightning".into()),
             );
         }
         if deps.contains(&"bitcoin".to_string()) {
