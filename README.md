@@ -1,9 +1,8 @@
 # Citadel app CLI
 
-This is a new tool to parse, validate, and process Citadel app.yml and app.yml.jinja files.
-In addition, it can also parse Umbrel apps and convert them to Citadel apps. Because this feature is somewhat limited and may require some manual work, it is not used automatically.
+This is a new tool to parse, validate, and process Citadel app.yml and app.yml.jinja files, and also Umbrel apps which consist of a docker-compose.yml and an umbrel-app.yml file.
 
-It is currently invoked by a Python script and is not intended to be used directly by users.
+It is a low-level parser for app formats and not intended to be used directly by users.
 
 However, it can be quite useful for developers who want to validate their app.yml files or port their app from Umbrel.
 
