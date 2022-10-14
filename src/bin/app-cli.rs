@@ -182,7 +182,7 @@ async fn main() {
             let port_map_entry = port_map.get(&app_name).expect("App not found in port map!");
             let port_map = port_map_entry
                 .as_object()
-                .expect("App definition in port map is invalid!");
+                .expect("App definition in port map is invalid!").to_owned();
             let result = convert_config(
                 &app_name,
                 &app_yml,

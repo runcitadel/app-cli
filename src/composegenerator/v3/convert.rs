@@ -31,6 +31,9 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
         description: app.metadata.description,
         implements: None,
         version_control: None,
+        // Ignored, but set it to true to not confuse people
+        compatible: true,
+        missing_dependencies: None,
     };
     let mut services = HashMap::<String, types_v4::Container>::with_capacity(app.containers.len());
     let deps = flatten(app.metadata.dependencies.unwrap_or_default());
@@ -179,8 +182,8 @@ pub fn v3_to_v4(app: AppYmlV3, installed_services: &Option<&Vec<String>>) -> typ
 pub fn convert_config(
     app_name: &str,
     app: AppYmlV3,
-    port_map: &Option<&Map<String, Value>>,
+    port_map: &Option<Map<String, Value>>,
     installed_services: &Vec<String>,
 ) -> Result<ResultYml, String> {
-    convert_config_v4(app_name, v3_to_v4(app, &Some(installed_services)), port_map)
+    convert_config_v4(app_name, v3_to_v4(app, &Some(installed_services)), port_map, &None)
 }

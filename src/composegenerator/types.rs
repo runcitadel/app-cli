@@ -60,6 +60,12 @@ pub struct Metadata {
     pub implements: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_control: Option<String>,
+    /// True if all dependencies are installed
+    #[serde(default = "bool::default")]
+    pub compatible: bool,
+    /// If compatible is false, the dependencies that are missing
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub missing_dependencies: Option<Vec<Permissions>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

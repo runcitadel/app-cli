@@ -402,10 +402,33 @@ fn get_hidden_services(
     result
 }
 
+fn get_missing_dependencies(
+    required: &Vec<Permissions>,
+    installed: &Vec<String>,
+) -> Vec<Permissions> {
+    let mut missing = Vec::<Permissions>::new();
+    for requirement in required {
+        match requirement {
+            Permissions::OneDependency(dep) => {
+                if !installed.contains(dep) {
+                    missing.push(Permissions::OneDependency(dep.to_owned()));
+                }
+            }
+            Permissions::AlternativeDependency(deps) => {
+                if !deps.iter().any(|dep| installed.contains(dep)) {
+                    missing.push(Permissions::AlternativeDependency(deps.to_owned()));
+                }
+            }
+        }
+    }
+    missing
+}
+
 pub fn convert_config(
     app_name: &str,
     app: types::AppYml,
-    port_map: &Option<&Map<String, Value>>,
+    port_map: &Option<Map<String, Value>>,
+    installed_services: &Option<Vec<String>>,
 ) -> Result<ResultYml, String> {
     let mut spec: ComposeSpecification = ComposeSpecification {
         // Version is deprecated in the latest compose and should no longer be used
@@ -493,12 +516,17 @@ pub fn convert_config(
         );
     }
 
+    let missing_deps = get_missing_dependencies(
+        &app.metadata.permissions,
+        &installed_services.as_ref().unwrap_or(&vec![]),
+    );
     let mut metadata = app.metadata;
     metadata.id = Some(app_name.to_string());
-    metadata.permissions = permissions
-        .iter()
-        .map(|val| Permissions::OneDependency(val.to_string()))
-        .collect();
+    metadata.compatible = missing_deps.is_empty();
+    if !missing_deps.is_empty() {
+        metadata.missing_dependencies = Some(missing_deps);
+    }
+
     let result = ResultYml {
         spec,
         new_tor_entries: get_hidden_services(app_name, app.services, &main_service, main_port),
@@ -562,7 +590,7 @@ mod test {
                 }
             }
         };
-        let result = convert_config("example-app", example_app, &None);
+        let result = convert_config("example-app", example_app, &None, &None);
         assert!(result.is_ok());
         let expected_result = ResultYml {
             port: 3000,

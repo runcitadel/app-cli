@@ -61,7 +61,7 @@ where
 pub fn convert_config<R>(
     app_name: &str,
     app_reader: R,
-    port_map: &Option<&Map<String, Value>>,
+    port_map: &Option<Map<String, Value>>,
     installed_services: &Option<Vec<String>>,
 ) -> Result<ResultYml, String>
 where
@@ -70,7 +70,7 @@ where
     let app_yml = load_config(app_reader).expect("Failed to parse app.yml");
     match app_yml {
         AppYmlFile::V4(app_definition) => {
-            v4::convert::convert_config(app_name, app_definition, port_map)
+            v4::convert::convert_config(app_name, app_definition, port_map, installed_services)
         }
         AppYmlFile::V3(app_definition) => {
             if let Some(installed_services) = installed_services {

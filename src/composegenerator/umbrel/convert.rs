@@ -45,6 +45,9 @@ pub fn convert_metadata(metadata: Metadata) -> CitadelMetadata {
         description: metadata.description,
         implements: None,
         version_control: None,
+        // Ignored, but set it to true to not confuse people
+        compatible: true,
+        missing_dependencies: None,
     }
 }
 
