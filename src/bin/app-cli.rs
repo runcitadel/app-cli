@@ -3,15 +3,20 @@ use citadel_apps::composegenerator::convert_config;
 use citadel_apps::composegenerator::load_config;
 #[cfg(all(feature = "umbrel", feature = "dev-tools"))]
 use citadel_apps::composegenerator::umbrel::types::Metadata as UmbrelMetadata;
-#[cfg(feature = "dev-tools")]
-use citadel_apps::{
-    composegenerator::v3::convert::v3_to_v4, composegenerator::v3::types::SchemaItemContainers,
-    composegenerator::v4::types::AppYml, updates::update_app,
-};
 #[cfg(feature = "preprocess")]
 use citadel_apps::{
     composegenerator::v4::{permissions::is_allowed_by_permissions, utils::derive_entropy},
     utils::flatten,
+};
+#[cfg(feature = "dev-tools")]
+use citadel_apps::{
+    composegenerator::{
+        compose::types::ComposeSpecification,
+        types::{Metadata, ResultYml},
+        v3::{convert::v3_to_v4, types::SchemaItemContainers},
+        v4::types::AppYml,
+    },
+    updates::update_app,
 };
 use clap::{Parser, Subcommand};
 #[cfg(feature = "preprocess")]
@@ -182,7 +187,8 @@ async fn main() {
             let port_map_entry = port_map.get(&app_name).expect("App not found in port map!");
             let port_map = port_map_entry
                 .as_object()
-                .expect("App definition in port map is invalid!").to_owned();
+                .expect("App definition in port map is invalid!")
+                .to_owned();
             let result = convert_config(
                 &app_name,
                 &app_yml,
@@ -212,6 +218,18 @@ async fn main() {
             #[cfg(feature = "umbrel")]
             "umbrel" => {
                 let schema = schemars::schema_for!(UmbrelMetadata);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            "metadata" => {
+                let schema = schemars::schema_for!(Metadata);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            "result" => {
+                let schema = schemars::schema_for!(ResultYml);
+                println!("{}", serde_yaml::to_string(&schema).unwrap());
+            }
+            "compose" => {
+                let schema = schemars::schema_for!(ComposeSpecification);
                 println!("{}", serde_yaml::to_string(&schema).unwrap());
             }
             _ => {

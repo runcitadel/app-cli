@@ -69,6 +69,7 @@ pub struct Metadata {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ResultYml {
     pub port: u16,
     pub new_tor_entries: String,

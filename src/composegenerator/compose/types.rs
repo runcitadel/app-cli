@@ -12,14 +12,16 @@ pub enum Command {
 }
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "blkio_limit")]
 pub struct BlkioLimit {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub rate: Option<serde_yaml::Value>,
+    pub rate: Option<serde_json::Value>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "blkio_weight")]
 pub struct BlkioWeight {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -28,10 +30,11 @@ pub struct BlkioWeight {
     pub weight: Option<i64>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "config")]
 pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub external: Option<serde_yaml::Value>,
+    pub external: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -41,13 +44,15 @@ pub struct Config {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub template_driver: Option<String>,
 }
-pub type Constraints = serde_yaml::Value;
+pub type Constraints = serde_json::Value;
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferences {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub spread: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacement {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub constraints: Option<Vec<String>>,
@@ -57,18 +62,20 @@ pub struct DeploymentPlacement {
     pub preferences: Option<Vec<DeploymentPlacementItemItemPreferences>>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimits {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpus: Option<serde_yaml::Value>,
+    pub cpus: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub memory: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pids: Option<i64>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservations {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpus: Option<serde_yaml::Value>,
+    pub cpus: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub devices: Option<Devices>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -77,6 +84,7 @@ pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservations {
     pub memory: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResources {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub limits: Option<DeploymentPlacementItemItemPreferencesResourcesLimits>,
@@ -84,6 +92,7 @@ pub struct DeploymentPlacementItemItemPreferencesResources {
     pub reservations: Option<DeploymentPlacementItemItemPreferencesResourcesLimitsReservations>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub condition: Option<String>,
@@ -95,6 +104,7 @@ pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRest
     pub window: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfig
 {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -111,6 +121,7 @@ pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRest
     pub parallelism: Option<i64>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfigUpdateConfig
 {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -127,14 +138,36 @@ pub struct DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRest
     pub parallelism: Option<i64>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "deployment")]
-pub struct Deployment { # [serde (skip_serializing_if = "Option::is_none")] pub endpoint_mode : Option < String > , # [serde (skip_serializing_if = "Option::is_none")] pub labels : Option < ListOrDict > , # [serde (skip_serializing_if = "Option::is_none")] pub mode : Option < String > , # [serde (skip_serializing_if = "Option::is_none")] pub placement : Option < DeploymentPlacement > , # [serde (skip_serializing_if = "Option::is_none")] pub replicas : Option < i64 > , # [serde (skip_serializing_if = "Option::is_none")] pub resources : Option < DeploymentPlacementItemItemPreferencesResources > , # [serde (skip_serializing_if = "Option::is_none")] pub restart_policy : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicy > , # [serde (skip_serializing_if = "Option::is_none")] pub rollback_config : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfig > , # [serde (skip_serializing_if = "Option::is_none")] pub update_config : Option < DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfigUpdateConfig > }
+pub struct Deployment {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub endpoint_mode : Option<String >,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub labels : Option<ListOrDict>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mode : Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub placement : Option<DeploymentPlacement>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub replicas : Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resources : Option<DeploymentPlacementItemItemPreferencesResources>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub restart_policy : Option<DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicy>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rollback_config : Option<DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub update_config : Option<DeploymentPlacementItemItemPreferencesResourcesLimitsReservationsRestartPolicyRollbackConfigUpdateConfig>
+}
+
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct DevicesItemParallelism {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<ListOfStrings>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub count: Option<serde_yaml::Value>,
+    pub count: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device_ids: Option<ListOfStrings>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -144,6 +177,7 @@ pub struct DevicesItemParallelism {
 }
 pub type Devices = Vec<DevicesItemParallelism>;
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct GenericResourcesItemOptionsDiscreteResourceSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -151,12 +185,14 @@ pub struct GenericResourcesItemOptionsDiscreteResourceSpec {
     pub value: Option<f64>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct GenericResourcesItemOptions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub discrete_resource_spec: Option<GenericResourcesItemOptionsDiscreteResourceSpec>,
 }
 pub type GenericResources = Vec<GenericResourcesItemOptions>;
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "healthcheck")]
 pub struct Healthcheck {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -168,15 +204,17 @@ pub struct Healthcheck {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_period: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub test: Option<serde_yaml::Value>,
+    pub test: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
 pub type ListOfStrings = Vec<String>;
-pub type ListOrDict = serde_yaml::Value;
+pub type ListOrDict = serde_json::Value;
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct NetworkIpamItemConfigAuxAddresses {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct NetworkIpamItemConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aux_addresses: Option<NetworkIpamItemConfigAuxAddresses>,
@@ -188,8 +226,10 @@ pub struct NetworkIpamItemConfig {
     pub subnet: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct NetworkIpamItemConfigAuxAddressesOptions {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct NetworkIpam {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<Vec<NetworkIpamItemConfig>>,
@@ -199,6 +239,7 @@ pub struct NetworkIpam {
     pub options: Option<NetworkIpamItemConfigAuxAddressesOptions>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "network")]
 pub struct Network {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -206,12 +247,12 @@ pub struct Network {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub driver: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "enable_ipv6")]
     pub enable_ipv_6: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub external: Option<serde_yaml::Value>,
+    pub external: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub internal: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -222,14 +263,15 @@ pub struct Network {
     pub name: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "secret")]
 pub struct Secret {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub driver: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub external: Option<serde_yaml::Value>,
+    pub external: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub file: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -240,6 +282,7 @@ pub struct Secret {
     pub template_driver: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ServiceBlkioConfig {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device_read_bps: Option<Vec<BlkioLimit>>,
@@ -255,6 +298,7 @@ pub struct ServiceBlkioConfig {
     pub weight_device: Option<Vec<BlkioWeight>>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpec {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<String>,
@@ -264,12 +308,13 @@ pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpec {
     pub registry: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ServiceBlkioConfigItemItemItemItemItemItemItemCredentialSpecItemItemItemItemItemItemLogging
 {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub driver: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub options: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub options: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
@@ -282,6 +327,7 @@ pub enum StringOrIntOrBool {
 }
 
 #[derive(Clone, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(untagged)]
 pub enum EnvVars {
     List(Vec<String>),
@@ -289,12 +335,13 @@ pub enum EnvVars {
 }
 
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "service")]
 pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blkio_config: Option<ServiceBlkioConfig>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub build: Option<serde_yaml::Value>,
+    pub build: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cap_add: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -312,17 +359,17 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cpu_percent: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu_period: Option<serde_yaml::Value>,
+    pub cpu_period: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu_quota: Option<serde_yaml::Value>,
+    pub cpu_quota: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu_rt_period: Option<serde_yaml::Value>,
+    pub cpu_rt_period: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu_rt_runtime: Option<serde_yaml::Value>,
+    pub cpu_rt_runtime: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpu_shares: Option<serde_yaml::Value>,
+    pub cpu_shares: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cpus: Option<serde_yaml::Value>,
+    pub cpus: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cpuset: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -350,15 +397,15 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub environment: Option<EnvVars>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub expose: Option<Vec<serde_yaml::Value>>,
+    pub expose: Option<Vec<serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub extends: Option<serde_yaml::Value>,
+    pub extends: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub external_links: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_hosts: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_add: Option<Vec<serde_yaml::Value>>,
+    pub group_add: Option<Vec<serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub healthcheck: Option<Healthcheck>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -382,13 +429,13 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mac_address: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mem_limit: Option<serde_yaml::Value>,
+    pub mem_limit: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub mem_reservation: Option<serde_yaml::Value>,
+    pub mem_reservation: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mem_swappiness: Option<i64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub memswap_limit: Option<serde_yaml::Value>,
+    pub memswap_limit: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub network_mode: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -400,7 +447,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pid: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pids_limit: Option<serde_yaml::Value>,
+    pub pids_limit: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub platform: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
@@ -424,7 +471,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub security_opt: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub shm_size: Option<serde_yaml::Value>,
+    pub shm_size: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stdin_open: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -432,7 +479,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stop_signal: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub storage_opt: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub storage_opt: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sysctls: Option<ListOrDict>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -440,7 +487,7 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tty: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub ulimits: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub ulimits: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -452,31 +499,37 @@ pub struct Service {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub working_dir: Option<String>,
 }
-pub type ServiceConfigOrSecret = Vec<serde_yaml::Value>;
-pub type StringOrList = serde_yaml::Value;
+pub type ServiceConfigOrSecret = Vec<serde_json::Value>;
+pub type StringOrList = serde_json::Value;
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "volume")]
 pub struct Volume {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub driver: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub driver_opts: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub external: Option<serde_yaml::Value>,
+    pub external: Option<serde_json::Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub labels: Option<ListOrDict>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ComposeSpecificationConfigs {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ComposeSpecificationConfigsSecrets {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ComposeSpecificationConfigsSecretsServices {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ComposeSpecificationConfigsSecretsServicesVolumes {}
 #[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "Compose Specification")]
 pub struct ComposeSpecification {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -485,7 +538,7 @@ pub struct ComposeSpecification {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub networks: Option<::std::collections::BTreeMap<String, serde_yaml::Value>>,
+    pub networks: Option<::std::collections::BTreeMap<String, serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub secrets: Option<ComposeSpecificationConfigsSecrets>,
     #[serde(skip_serializing_if = "Option::is_none")]
