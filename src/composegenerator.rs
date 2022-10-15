@@ -4,6 +4,8 @@ pub mod types;
 pub mod umbrel;
 pub mod v3;
 pub mod v4;
+// A subset of compose
+pub mod output;
 
 use serde_json::{Map, Value};
 

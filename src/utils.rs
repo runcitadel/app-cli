@@ -22,6 +22,19 @@ macro_rules! map(
      };
 );
 
+#[macro_export]
+macro_rules! bmap(
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut m = ::std::collections::BTreeMap::new();
+            $(
+                m.insert($key.to_string(), $value);
+            )+
+            m
+        }
+     };
+);
+
 pub fn find_env_vars(string: &str) -> Vec<&str> {
     let mut result: Vec<&str> = Vec::new();
     let matches = ENV_VAR_REGEX.captures_iter(string);

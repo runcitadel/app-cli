@@ -1,16 +1,16 @@
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value};
 
 use super::{
     permissions, types,
     types::PortMapElement,
     utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
-use crate::composegenerator::{
-    compose::types::{ComposeSpecification, EnvVars, Service, StringOrIntOrBool},
-    types::Permissions,
-};
+use crate::{composegenerator::{
+    output::types::{ComposeSpecification, Service, NetworkEntry},
+    types::Permissions, compose::types::StringOrIntOrBool,
+}, bmap};
 use crate::utils::{find_env_vars, flatten};
-use std::collections::HashMap;
+use std::collections::{HashMap, BTreeMap};
 
 use crate::composegenerator::types::ResultYml;
 
@@ -175,11 +175,11 @@ fn define_ip_addresses(
             .enable_networking
             .unwrap_or(true)
         {
-            service.networks = Some(json!({
-                "default": {
-                    "ipv4_address": format!("$APP_{}_{}_IP", app_name.to_string().to_uppercase().replace('-', "_"), service_name.to_uppercase().replace('-', "_"))
+            service.networks = Some(bmap! {
+                "default" => NetworkEntry {
+                    ipv4_address: Some(format!("$APP_{}_{}_IP", app_name.to_string().to_uppercase().replace('-', "_"), service_name.to_uppercase().replace('-', "_")))
                 }
-            }))
+            })
         } else if service_name == main_container {
             return Err("Network can not be disabled for the main container".to_string());
         }
@@ -210,7 +210,7 @@ fn validate_service(
         result.command = Some(command.to_owned());
     }
     if let Some(env) = &service.environment {
-        result.environment = Some(EnvVars::Map(HashMap::<String, StringOrIntOrBool>::new()));
+        result.environment = Some(BTreeMap::<String, StringOrIntOrBool>::new());
         let result_env = result.environment.as_mut().unwrap();
         for value in env {
             let val = match value.1 {
@@ -239,10 +239,7 @@ fn validate_service(
                 StringOrIntOrBool::Bool(bool) => StringOrIntOrBool::Bool(*bool),
             };
 
-            match result_env {
-                EnvVars::List(_) => unreachable!(),
-                EnvVars::Map(map) => map.insert(value.0.to_owned(), val),
-            };
+            result_env.insert(value.0.to_owned(), val);
         }
     }
     if service.network_mode.is_some() {
@@ -431,16 +428,9 @@ pub fn convert_config(
     installed_services: &Option<Vec<String>>,
 ) -> Result<ResultYml, String> {
     let mut spec: ComposeSpecification = ComposeSpecification {
-        // Version is deprecated in the latest compose and should no longer be used
-        version: None,
-        services: Some(HashMap::new()),
-        configs: None,
-        name: None,
-        networks: None,
-        secrets: None,
-        volumes: None,
+        services: Some(BTreeMap::new()),
     };
-    let spec_services = spec.services.get_or_insert(HashMap::new());
+    let spec_services = spec.services.get_or_insert(BTreeMap::new());
     let mut permissions = flatten(app.metadata.permissions.clone());
 
     let main_service = get_main_container(&app)?;
@@ -543,15 +533,14 @@ mod test {
     use super::convert_config;
     use crate::{
         composegenerator::{
-            compose::types::{ComposeSpecification, Service},
+            output::types::{ComposeSpecification, Service, NetworkEntry},
             types::{Metadata, Permissions, ResultYml},
             v4::types::{AppYml, Container},
         },
-        map,
+        map, bmap,
     };
 
     use pretty_assertions::assert_eq;
-    use serde_json::json;
 
     #[test]
     fn test_simple_app() {
@@ -596,27 +585,27 @@ mod test {
             port: 3000,
             new_tor_entries: "HiddenServiceDir /var/lib/tor/app-example-app\nHiddenServicePort 80 <app-example-app-main-ip>:3000\n".to_string(),
             spec: ComposeSpecification {
-                services: Some(map! {
+                services: Some(bmap! {
                     "main" => Service {
                         image: Some("ghcr.io/runcitadel/example:main".to_string()),
                         user: Some("1000:1000".to_string()),
                         depends_on: Some(vec!["database".to_string()]),
                         ports: vec!["3000:3000".to_string()],
-                        networks: Some(json!({
-                            "default": Some(json!({
-                                "ipv4_address": "$APP_EXAMPLE_APP_MAIN_IP".to_string()
-                            }))
-                        })),
+                        networks: Some(bmap! {
+                            "default" => NetworkEntry {
+                                ipv4_address: Some("$APP_EXAMPLE_APP_MAIN_IP".to_string())
+                            }
+                        }),
                         ..Default::default()
                     },
                     "database" => Service {
                         image: Some("ghcr.io/runcitadel/example-db:main".to_string()),
                         user: Some("1000:1000".to_string()),
-                        networks: Some(json!({
-                            "default": Some(json!({
-                                "ipv4_address": "$APP_EXAMPLE_APP_DATABASE_IP".to_string()
-                            }))
-                        })),
+                        networks: Some(bmap! {
+                            "default" => NetworkEntry {
+                                ipv4_address: Some("$APP_EXAMPLE_APP_DATABASE_IP".to_string())
+                            }
+                        }),
                         ..Default::default()
                     }
                 }),

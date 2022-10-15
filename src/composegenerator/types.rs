@@ -3,7 +3,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::composegenerator::compose::types::ComposeSpecification;
+use crate::composegenerator::output::types::ComposeSpecification;
 
 // General types also relevant for the output
 // Can be re-used by schemas
