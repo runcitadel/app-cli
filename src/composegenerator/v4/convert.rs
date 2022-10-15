@@ -627,7 +627,7 @@ mod test {
                 },
                 support: "https://t.me/citadeldevelopers".to_string(),
                 description: "This is an example app that provides multiple features that you need on your node. These features include:\n\n- Example\n- Example\n- Example".to_string(),
-                missing_dependencies: vec![Permissions::OneDependency("lnd".to_string())],
+                missing_dependencies: Some(vec![Permissions::OneDependency("lnd".to_string())]),
                 compatible: false,
                 ..Default::default()
             },
