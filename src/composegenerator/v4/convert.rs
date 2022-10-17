@@ -465,7 +465,6 @@ pub fn convert_config(
 
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
     for (service_name, service) in &app.services {
-        println!("{:#?}", service.required_ports);
         let base_result = Service {
             image: Some(service.image.clone()),
             restart: service.restart.clone(),
