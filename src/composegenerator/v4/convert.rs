@@ -5,12 +5,16 @@ use super::{
     types::PortMapElement,
     utils::{get_host_port, get_main_container, validate_cmd, validate_port_map_app},
 };
-use crate::{composegenerator::{
-    output::types::{ComposeSpecification, Service, NetworkEntry},
-    types::Permissions, compose::types::StringOrIntOrBool,
-}, bmap};
 use crate::utils::{find_env_vars, flatten};
-use std::collections::{HashMap, BTreeMap};
+use crate::{
+    bmap,
+    composegenerator::{
+        compose::types::StringOrIntOrBool,
+        output::types::{ComposeSpecification, NetworkEntry, Service},
+        types::Permissions,
+    },
+};
+use std::collections::{BTreeMap, HashMap};
 
 use crate::composegenerator::types::ResultYml;
 
@@ -125,7 +129,6 @@ fn configure_ports(
                 service
                     .ports
                     .push(format!("{}:{}", port_map_elem.public_port, internal_port));
-                break;
             } else {
                 return Err("Main container port not found in port map".to_string());
             }
@@ -143,7 +146,6 @@ fn configure_ports(
                 return Err("A port is required for the main container".to_string());
             }
         }
-
         if let Some(required_ports) = &original_definition.required_ports {
             if let Some(tcp_ports) = &required_ports.tcp {
                 for port in tcp_ports {
@@ -463,6 +465,7 @@ pub fn convert_config(
 
     // Copy all properties that are the same in docker-compose.yml and need no or only a simple validation
     for (service_name, service) in &app.services {
+        println!("{:#?}", service.required_ports);
         let base_result = Service {
             image: Some(service.image.clone()),
             restart: service.restart.clone(),
@@ -532,12 +535,13 @@ pub fn convert_config(
 mod test {
     use super::convert_config;
     use crate::{
+        bmap,
         composegenerator::{
-            output::types::{ComposeSpecification, Service, NetworkEntry},
+            output::types::{ComposeSpecification, NetworkEntry, Service},
             types::{Metadata, Permissions, ResultYml},
             v4::types::{AppYml, Container},
         },
-        map, bmap,
+        map,
     };
 
     use pretty_assertions::assert_eq;
