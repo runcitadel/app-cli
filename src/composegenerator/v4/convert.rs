@@ -402,8 +402,8 @@ fn get_hidden_services(
 }
 
 fn get_missing_dependencies(
-    required: &Vec<Permissions>,
-    installed: &Vec<String>,
+    required: &[Permissions],
+    installed: &[String],
 ) -> Vec<Permissions> {
     let mut missing = Vec::<Permissions>::new();
     for requirement in required {
@@ -510,7 +510,7 @@ pub fn convert_config(
 
     let missing_deps = get_missing_dependencies(
         &app.metadata.permissions,
-        &installed_services.as_ref().unwrap_or(&vec![]),
+        installed_services.as_ref().unwrap_or(&vec![]),
     );
     let mut metadata = app.metadata;
     metadata.id = Some(app_name.to_string());

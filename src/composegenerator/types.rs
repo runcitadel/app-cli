@@ -68,7 +68,7 @@ pub struct Metadata {
     pub missing_dependencies: Option<Vec<Permissions>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct ResultYml {
     pub port: u16,

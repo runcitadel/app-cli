@@ -4,14 +4,14 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use super::super::compose::types::{StringOrIntOrBool, Command};
 
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 pub struct NetworkEntry {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ipv4_address: Option<String>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "service")]
 pub struct Service {
@@ -53,7 +53,7 @@ pub struct Service {
     pub working_dir: Option<String>,
 }
 
-#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Debug)]
+#[derive(Clone, Default, Deserialize, Serialize, PartialEq, Eq, Debug)]
 #[cfg_attr(feature = "schema", derive(JsonSchema))]
 #[serde(rename = "Compose Specification")]
 pub struct ComposeSpecification {
