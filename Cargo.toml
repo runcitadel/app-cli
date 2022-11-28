@@ -25,7 +25,7 @@ semver = { version = "1.0.14", optional = true }
 gitlab = { version = "0.1505.0", optional = true }
 url = { version = "2.3.0", optional = true }
 # Only used by the CLI
-env_logger = { version = "0.9", optional = true }
+env_logger = { version = "0.10", optional = true }
 clap = { version = "3.2", features = ["derive"], optional = true }
 tera = { version = "1", default-features = false, optional = true }
 dotenv = { version = "0.15.0", optional = true }
