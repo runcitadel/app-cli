@@ -17,7 +17,7 @@ hex = "0.4.3"
 hmac-sha256 = "1.1.5"
 # Optional dependencies
 schemars = { version = "0.8", optional = true }
-tokio  = { version = "1.21.2", optional = true, features = ["full"] }
+tokio  = { version = "1.23.0", optional = true, features = ["full"] }
 bollard = { version = "0.13.0", optional = true }
 futures-util = { version = "0.3.25", optional = true }
 octocrab = { version = "0.17.0", optional = true }
