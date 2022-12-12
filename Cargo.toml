@@ -14,7 +14,7 @@ regex = "1"
 lazy_static = "1.4"
 log = "0.4"
 hex = "0.4.3"
-hmac-sha256 = "1.1.5"
+hmac-sha256 = "1.1.6"
 # Optional dependencies
 schemars = { version = "0.8", optional = true }
 tokio  = { version = "1.23.0", optional = true, features = ["full"] }
